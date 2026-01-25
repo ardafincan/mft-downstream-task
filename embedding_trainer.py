@@ -109,8 +109,11 @@ class EmbeddingDistillationTrainer:
             except ImportError:
                 logger.warning("flash-attn not installed, skipping Flash Attention")
 
+        model_kwargs["trust_remote_code"] = True
+
         model = SentenceTransformer(
-            self.config.student_model, model_kwargs=model_kwargs
+            self.config.student_model,
+            model_kwargs=model_kwargs,
         )
         model.to(self.device)
 
@@ -225,7 +228,8 @@ class EmbeddingDistillationTrainer:
 
                 # Pad input_ids to same length
                 max_len = max(len(ids) for ids in input_ids_list)
-                pad_id = getattr(self._original_model.tokenizer, "pad_token_id", 0) or 0
+                # Hardcode pad_id to 0 as requested/safe default
+                pad_id = 0
                 padded = [
                     ids + [pad_id] * (max_len - len(ids)) for ids in input_ids_list
                 ]
@@ -262,7 +266,10 @@ class EmbeddingDistillationTrainer:
 
                 progress.set_postfix({"loss": f"{loss.item():.4f}"})
 
-                if self.global_step % self.config.logging_steps == 0:
+                if (
+                    self.global_step <= 20
+                    or self.global_step % self.config.logging_steps == 0
+                ):
                     avg_loss = epoch_loss / num_batches
                     lr = self.scheduler.get_last_lr()[0]
                     logger.info(

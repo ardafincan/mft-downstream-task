@@ -15,7 +15,14 @@ except ImportError:
     from typing_extensions import Self
 
 import torch
-from transformers import AutoConfig, AutoModel, AutoTokenizer, MT5Config, PretrainedConfig, T5Config
+from transformers import (
+    AutoConfig,
+    AutoModel,
+    AutoTokenizer,
+    MT5Config,
+    PretrainedConfig,
+    T5Config,
+)
 from transformers.utils.import_utils import is_peft_available
 from transformers.utils.peft_utils import find_adapter_config_file
 
@@ -27,7 +34,9 @@ if TYPE_CHECKING and is_peft_available():
     from peft import PeftConfig
 
 
-def _save_pretrained_wrapper(_save_pretrained_fn: Callable, subfolder: str) -> Callable[..., None]:
+def _save_pretrained_wrapper(
+    _save_pretrained_fn: Callable, subfolder: str
+) -> Callable[..., None]:
     def wrapper(save_directory: str | Path, **kwargs) -> None:
         os.makedirs(Path(save_directory) / subfolder, exist_ok=True)
         return _save_pretrained_fn(Path(save_directory) / subfolder, **kwargs)
@@ -86,12 +95,18 @@ class Transformer(InputModule):
         if config_args is None:
             config_args = {}
 
-        config, is_peft_model = self._load_config(model_name_or_path, cache_dir, backend, config_args)
-        self._load_model(model_name_or_path, config, cache_dir, backend, is_peft_model, **model_args)
+        config, is_peft_model = self._load_config(
+            model_name_or_path, cache_dir, backend, config_args
+        )
+        self._load_model(
+            model_name_or_path, config, cache_dir, backend, is_peft_model, **model_args
+        )
 
         # Get the signature of the auto_model's forward method to pass only the expected arguments from `features`,
         # plus some common values like "input_ids", "attention_mask", etc.
-        model_forward_params = list(inspect.signature(self.auto_model.forward).parameters)
+        model_forward_params = list(
+            inspect.signature(self.auto_model.forward).parameters
+        )
         self.model_forward_params = set(model_forward_params) | {
             "input_ids",
             "attention_mask",
@@ -101,18 +116,29 @@ class Transformer(InputModule):
 
         if max_seq_length is not None and "model_max_length" not in tokenizer_args:
             tokenizer_args["model_max_length"] = max_seq_length
-        
+
         # Use custom tokenizer if provided, otherwise load from pretrained
         if custom_tokenizer is not None:
             self.tokenizer = custom_tokenizer
             self._is_custom_tokenizer = True
         else:
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                tokenizer_name_or_path if tokenizer_name_or_path is not None else model_name_or_path,
-                cache_dir=cache_dir,
-                **tokenizer_args,
-            )
-            self._is_custom_tokenizer = False
+            try:
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    (
+                        tokenizer_name_or_path
+                        if tokenizer_name_or_path is not None
+                        else model_name_or_path
+                    ),
+                    cache_dir=cache_dir,
+                    **tokenizer_args,
+                )
+                self._is_custom_tokenizer = False
+            except Exception as e:
+                logger.warning(
+                    f"Could not load tokenizer: {e}. Proceeding without tokenizer."
+                )
+                self.tokenizer = None
+                self._is_custom_tokenizer = False
 
         # No max_seq_length set. Try to infer from model
         if max_seq_length is None:
@@ -121,7 +147,10 @@ class Transformer(InputModule):
                 and hasattr(self.auto_model.config, "max_position_embeddings")
                 and hasattr(self.tokenizer, "model_max_length")
             ):
-                max_seq_length = min(self.auto_model.config.max_position_embeddings, self.tokenizer.model_max_length)
+                max_seq_length = min(
+                    self.auto_model.config.max_position_embeddings,
+                    self.tokenizer.model_max_length,
+                )
 
         self.max_seq_length = max_seq_length
 
@@ -129,7 +158,11 @@ class Transformer(InputModule):
             self.auto_model.config.tokenizer_class = self.tokenizer.__class__.__name__
 
     def _load_config(
-        self, model_name_or_path: str, cache_dir: str | None, backend: str, config_args: dict[str, Any]
+        self,
+        model_name_or_path: str,
+        cache_dir: str | None,
+        backend: str,
+        config_args: dict[str, Any],
     ) -> tuple[PeftConfig | PretrainedConfig, bool]:
         """Loads the transformers or PEFT configuration
 
@@ -166,9 +199,19 @@ class Transformer(InputModule):
                 )
             from peft import PeftConfig
 
-            return PeftConfig.from_pretrained(model_name_or_path, **config_args, cache_dir=cache_dir), True
+            return (
+                PeftConfig.from_pretrained(
+                    model_name_or_path, **config_args, cache_dir=cache_dir
+                ),
+                True,
+            )
 
-        return AutoConfig.from_pretrained(model_name_or_path, **config_args, cache_dir=cache_dir), False
+        return (
+            AutoConfig.from_pretrained(
+                model_name_or_path, **config_args, cache_dir=cache_dir
+            ),
+            False,
+        )
 
     def _load_model(
         self,
@@ -200,7 +243,9 @@ class Transformer(InputModule):
             if isinstance(config, T5Config):
                 self._load_t5_model(model_name_or_path, config, cache_dir, **model_args)
             elif isinstance(config, MT5Config):
-                self._load_mt5_model(model_name_or_path, config, cache_dir, **model_args)
+                self._load_mt5_model(
+                    model_name_or_path, config, cache_dir, **model_args
+                )
             else:
                 self.auto_model = AutoModel.from_pretrained(
                     model_name_or_path, config=config, cache_dir=cache_dir, **model_args
@@ -220,9 +265,17 @@ class Transformer(InputModule):
                 **model_args,
             )
         else:
-            raise ValueError(f"Unsupported backend '{backend}'. `backend` should be `torch`, `onnx`, or `openvino`.")
+            raise ValueError(
+                f"Unsupported backend '{backend}'. `backend` should be `torch`, `onnx`, or `openvino`."
+            )
 
-    def _load_t5_model(self, model_name_or_path: str, config: PretrainedConfig, cache_dir: str, **model_args) -> None:
+    def _load_t5_model(
+        self,
+        model_name_or_path: str,
+        config: PretrainedConfig,
+        cache_dir: str,
+        **model_args,
+    ) -> None:
         """Loads the encoder model from T5"""
         from transformers import T5EncoderModel
 
@@ -231,7 +284,13 @@ class Transformer(InputModule):
             model_name_or_path, config=config, cache_dir=cache_dir, **model_args
         )
 
-    def _load_mt5_model(self, model_name_or_path: str, config: PretrainedConfig, cache_dir: str, **model_args) -> None:
+    def _load_mt5_model(
+        self,
+        model_name_or_path: str,
+        config: PretrainedConfig,
+        cache_dir: str,
+        **model_args,
+    ) -> None:
         """Loads the encoder model from T5"""
         from transformers import MT5EncoderModel
 
@@ -243,7 +302,9 @@ class Transformer(InputModule):
     def __repr__(self) -> str:
         return f"Transformer({dict(self.get_config_dict(), architecture=self.auto_model.__class__.__name__)})"
 
-    def forward(self, features: dict[str, torch.Tensor], **kwargs) -> dict[str, torch.Tensor]:
+    def forward(
+        self, features: dict[str, torch.Tensor], **kwargs
+    ) -> dict[str, torch.Tensor]:
         """
         Forward pass through the transformer model.
 
@@ -265,7 +326,11 @@ class Transformer(InputModule):
                 - 'attention_mask': Possibly modified attention mask if using PeftModel with prompt learning
                 - 'all_layer_embeddings': If the model outputs hidden states, contains embeddings from all layers
         """
-        trans_features = {key: value for key, value in features.items() if key in self.model_forward_params}
+        trans_features = {
+            key: value
+            for key, value in features.items()
+            if key in self.model_forward_params
+        }
 
         outputs = self.auto_model(**trans_features, **kwargs, return_dict=True)
         token_embeddings = outputs[0]
@@ -283,9 +348,13 @@ class Transformer(InputModule):
                 batch_size = token_embeddings.size(0)
                 attention_mask = features["attention_mask"]
                 prefix_attention_mask = torch.ones(
-                    batch_size, self.auto_model.active_peft_config.num_virtual_tokens, device=attention_mask.device
+                    batch_size,
+                    self.auto_model.active_peft_config.num_virtual_tokens,
+                    device=attention_mask.device,
                 )
-                features["attention_mask"] = torch.cat((prefix_attention_mask, attention_mask), dim=1)
+                features["attention_mask"] = torch.cat(
+                    (prefix_attention_mask, attention_mask), dim=1
+                )
 
         if self.auto_model.config.output_hidden_states and "hidden_states" in outputs:
             features["all_layer_embeddings"] = outputs["hidden_states"]
@@ -296,7 +365,9 @@ class Transformer(InputModule):
         return self.auto_model.config.hidden_size
 
     def tokenize(
-        self, texts: list[str] | list[dict] | list[tuple[str, str]], padding: str | bool = True
+        self,
+        texts: list[str] | list[dict] | list[tuple[str, str]],
+        padding: str | bool = True,
     ) -> dict[str, torch.Tensor]:
         """Tokenizes a text and maps tokens to token-ids"""
         output = {}
@@ -325,19 +396,25 @@ class Transformer(InputModule):
             to_tokenize = [[s.lower() for s in col] for col in to_tokenize]
 
         # Handle custom tokenizers that may not support all kwargs
-        if getattr(self, '_is_custom_tokenizer', False):
+        if getattr(self, "_is_custom_tokenizer", False):
             # For custom tokenizers, encode each text individually and batch them
             all_input_ids = []
             all_attention_masks = []
-            
+
             # Flatten the texts for tokenization
-            flat_texts = to_tokenize[0] if len(to_tokenize) == 1 else [t1 + " " + t2 for t1, t2 in zip(to_tokenize[0], to_tokenize[1])]
-            
+            flat_texts = (
+                to_tokenize[0]
+                if len(to_tokenize) == 1
+                else [t1 + " " + t2 for t1, t2 in zip(to_tokenize[0], to_tokenize[1])]
+            )
+
             for text in flat_texts:
                 result = self.tokenizer(text)
                 if isinstance(result, dict):
                     all_input_ids.append(result.get("input_ids", result.get("ids", [])))
-                    all_attention_masks.append(result.get("attention_mask", [1] * len(all_input_ids[-1])))
+                    all_attention_masks.append(
+                        result.get("attention_mask", [1] * len(all_input_ids[-1]))
+                    )
                 elif isinstance(result, list):
                     all_input_ids.append(result)
                     all_attention_masks.append([1] * len(result))
@@ -345,19 +422,25 @@ class Transformer(InputModule):
                     # Assume it's a sequence of token ids
                     all_input_ids.append(list(result))
                     all_attention_masks.append([1] * len(all_input_ids[-1]))
-            
+
             # Truncate if max_seq_length is set
             if self.max_seq_length:
-                all_input_ids = [ids[:self.max_seq_length] for ids in all_input_ids]
-                all_attention_masks = [mask[:self.max_seq_length] for mask in all_attention_masks]
-            
+                all_input_ids = [ids[: self.max_seq_length] for ids in all_input_ids]
+                all_attention_masks = [
+                    mask[: self.max_seq_length] for mask in all_attention_masks
+                ]
+
             # Pad to the same length if padding is enabled
             if padding:
                 max_len = max(len(ids) for ids in all_input_ids)
-                pad_token_id = getattr(self.tokenizer, 'pad_token_id', 0)
-                all_input_ids = [ids + [pad_token_id] * (max_len - len(ids)) for ids in all_input_ids]
-                all_attention_masks = [mask + [0] * (max_len - len(mask)) for mask in all_attention_masks]
-            
+                pad_token_id = getattr(self.tokenizer, "pad_token_id", 0)
+                all_input_ids = [
+                    ids + [pad_token_id] * (max_len - len(ids)) for ids in all_input_ids
+                ]
+                all_attention_masks = [
+                    mask + [0] * (max_len - len(mask)) for mask in all_attention_masks
+                ]
+
             output["input_ids"] = torch.tensor(all_input_ids)
             output["attention_mask"] = torch.tensor(all_attention_masks)
         else:
@@ -373,9 +456,11 @@ class Transformer(InputModule):
         return output
 
     def save(self, output_path: str, safe_serialization: bool = True, **kwargs) -> None:
-        self.auto_model.save_pretrained(output_path, safe_serialization=safe_serialization)
+        self.auto_model.save_pretrained(
+            output_path, safe_serialization=safe_serialization
+        )
         # Only save tokenizer if it has save_pretrained method (skip custom tokenizers)
-        if hasattr(self.tokenizer, 'save_pretrained'):
+        if hasattr(self.tokenizer, "save_pretrained"):
             self.tokenizer.save_pretrained(output_path)
         self.save_config(output_path)
 
@@ -510,7 +595,10 @@ class Transformer(InputModule):
         # Don't allow configs to set trust_remote_code
         if "model_args" in config and "trust_remote_code" in config["model_args"]:
             config["model_args"].pop("trust_remote_code")
-        if "tokenizer_args" in config and "trust_remote_code" in config["tokenizer_args"]:
+        if (
+            "tokenizer_args" in config
+            and "trust_remote_code" in config["tokenizer_args"]
+        ):
             config["tokenizer_args"].pop("trust_remote_code")
         if "config_args" in config and "trust_remote_code" in config["config_args"]:
             config["config_args"].pop("trust_remote_code")

@@ -74,6 +74,7 @@ class Transformer(InputModule):
         do_lower_case: bool = False,
         tokenizer_name_or_path: str | None = None,
         backend: str = "torch",
+        custom_tokenizer: Any | None = None,
     ) -> None:
         super().__init__()
         self.do_lower_case = do_lower_case
@@ -100,11 +101,18 @@ class Transformer(InputModule):
 
         if max_seq_length is not None and "model_max_length" not in tokenizer_args:
             tokenizer_args["model_max_length"] = max_seq_length
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            tokenizer_name_or_path if tokenizer_name_or_path is not None else model_name_or_path,
-            cache_dir=cache_dir,
-            **tokenizer_args,
-        )
+        
+        # Use custom tokenizer if provided, otherwise load from pretrained
+        if custom_tokenizer is not None:
+            self.tokenizer = custom_tokenizer
+            self._is_custom_tokenizer = True
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer_name_or_path if tokenizer_name_or_path is not None else model_name_or_path,
+                cache_dir=cache_dir,
+                **tokenizer_args,
+            )
+            self._is_custom_tokenizer = False
 
         # No max_seq_length set. Try to infer from model
         if max_seq_length is None:
@@ -316,15 +324,52 @@ class Transformer(InputModule):
         if self.do_lower_case:
             to_tokenize = [[s.lower() for s in col] for col in to_tokenize]
 
-        output.update(
-            self.tokenizer(
-                *to_tokenize,
-                padding=padding,
-                truncation="longest_first",
-                return_tensors="pt",
-                max_length=self.max_seq_length,
+        # Handle custom tokenizers that may not support all kwargs
+        if getattr(self, '_is_custom_tokenizer', False):
+            # For custom tokenizers, encode each text individually and batch them
+            all_input_ids = []
+            all_attention_masks = []
+            
+            # Flatten the texts for tokenization
+            flat_texts = to_tokenize[0] if len(to_tokenize) == 1 else [t1 + " " + t2 for t1, t2 in zip(to_tokenize[0], to_tokenize[1])]
+            
+            for text in flat_texts:
+                result = self.tokenizer(text)
+                if isinstance(result, dict):
+                    all_input_ids.append(result.get("input_ids", result.get("ids", [])))
+                    all_attention_masks.append(result.get("attention_mask", [1] * len(all_input_ids[-1])))
+                elif isinstance(result, list):
+                    all_input_ids.append(result)
+                    all_attention_masks.append([1] * len(result))
+                else:
+                    # Assume it's a sequence of token ids
+                    all_input_ids.append(list(result))
+                    all_attention_masks.append([1] * len(all_input_ids[-1]))
+            
+            # Truncate if max_seq_length is set
+            if self.max_seq_length:
+                all_input_ids = [ids[:self.max_seq_length] for ids in all_input_ids]
+                all_attention_masks = [mask[:self.max_seq_length] for mask in all_attention_masks]
+            
+            # Pad to the same length if padding is enabled
+            if padding:
+                max_len = max(len(ids) for ids in all_input_ids)
+                pad_token_id = getattr(self.tokenizer, 'pad_token_id', 0)
+                all_input_ids = [ids + [pad_token_id] * (max_len - len(ids)) for ids in all_input_ids]
+                all_attention_masks = [mask + [0] * (max_len - len(mask)) for mask in all_attention_masks]
+            
+            output["input_ids"] = torch.tensor(all_input_ids)
+            output["attention_mask"] = torch.tensor(all_attention_masks)
+        else:
+            output.update(
+                self.tokenizer(
+                    *to_tokenize,
+                    padding=padding,
+                    truncation="longest_first",
+                    return_tensors="pt",
+                    max_length=self.max_seq_length,
+                )
             )
-        )
         return output
 
     def save(self, output_path: str, safe_serialization: bool = True, **kwargs) -> None:

@@ -184,6 +184,7 @@ class SentenceTransformer(nn.Sequential, FitMixin, PeftAdapterMixin):
         config_kwargs: dict[str, Any] | None = None,
         model_card_data: SentenceTransformerModelCardData | None = None,
         backend: Literal["torch", "onnx", "openvino"] = "torch",
+        custom_tokenizer: Any | None = None,
     ) -> None:
         # Note: self._load_sbert_model can also update `self.prompts` and `self.default_prompt_name`
         self.prompts = {"query": "", "document": ""}
@@ -200,6 +201,7 @@ class SentenceTransformer(nn.Sequential, FitMixin, PeftAdapterMixin):
         self._model_config = {"model_type": self.__class__.__name__}
         self._prompt_length_mapping = {}
         self.backend = backend
+        self.custom_tokenizer = custom_tokenizer
         if use_auth_token is not None:
             warnings.warn(
                 "The `use_auth_token` argument is deprecated and will be removed in v4 of SentenceTransformers.",
@@ -347,12 +349,22 @@ class SentenceTransformer(nn.Sequential, FitMixin, PeftAdapterMixin):
                     tokenizer_kwargs=tokenizer_kwargs,
                     config_kwargs=config_kwargs,
                     has_modules=has_modules,
+                    custom_tokenizer=custom_tokenizer,
                 )
 
         if modules is not None and not isinstance(modules, OrderedDict):
             modules = OrderedDict([(str(idx), module) for idx, module in enumerate(modules)])
 
         super().__init__(modules)
+
+        # If custom_tokenizer is provided, replace the tokenizer in the Transformer module
+        if custom_tokenizer is not None:
+            for module in self:
+                if hasattr(module, 'tokenizer'):
+                    module.tokenizer = custom_tokenizer
+                    module._is_custom_tokenizer = True
+                    logger.info(f"Replaced tokenizer in {module.__class__.__name__} with custom tokenizer")
+                    break
 
         # Ensure all tensors in the model are of the same dtype as the first tensor
         # This is necessary if the first module has been given a lower precision via
@@ -2076,6 +2088,7 @@ print(similarities)
         tokenizer_kwargs: dict[str, Any] | None = None,
         config_kwargs: dict[str, Any] | None = None,
         has_modules: bool = False,
+        custom_tokenizer: Any | None = None,
     ) -> list[nn.Module]:
         """
         Creates a simple Transformer + Mean Pooling model and returns the modules
@@ -2091,6 +2104,7 @@ print(similarities)
             tokenizer_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments for the tokenizer. Defaults to None.
             config_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments for the config. Defaults to None.
             has_modules (bool, optional): Whether the model has modules.json. Defaults to False.
+            custom_tokenizer (Optional[Any], optional): A custom tokenizer instance to use instead of loading from AutoTokenizer. Defaults to None.
 
         Returns:
             List[nn.Module]: A list containing the transformer model and the pooling model.
@@ -2116,6 +2130,7 @@ print(similarities)
             tokenizer_args=tokenizer_kwargs,
             config_args=config_kwargs,
             backend=self.backend,
+            custom_tokenizer=custom_tokenizer,
         )
         pooling_model = Pooling(transformer_model.get_word_embedding_dimension(), "mean")
         if not local_files_only:

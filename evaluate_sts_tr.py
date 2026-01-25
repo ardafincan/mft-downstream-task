@@ -31,6 +31,7 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import turkish_tokenizer as tt
 
 @dataclass
 class STSResult:
@@ -97,8 +98,10 @@ def evaluate_sts_tr(
     embeddings1 = embeddings[: len(sentences1)]
     embeddings2 = embeddings[len(sentences1) :]
 
-    # Compute cosine similarities
-    similarities = torch.nn.functional.cosine_similarity(embeddings1, embeddings2).cpu().numpy()
+    # Compute cosine similarities (convert to float32 for MPS compatibility)
+    similarities = torch.nn.functional.cosine_similarity(
+        embeddings1.float(), embeddings2.float()
+    ).cpu().numpy()
 
     # Compute correlations
     pearson = pearsonr(similarities, scores)[0]
@@ -142,7 +145,10 @@ def evaluate_model(
     splits = splits or ["test"]
 
     logger.info(f"Loading model: {model_name_or_path}")
-    model = SentenceTransformer(model_name_or_path, device=device, trust_remote_code=True)
+    if "mft" in model_name_or_path:
+        model = SentenceTransformer(model_name_or_path, device=device, trust_remote_code=True, custom_tokenizer=tt.TurkishTokenizer())
+    else:
+        model = SentenceTransformer(model_name_or_path, device=device, trust_remote_code=True)
 
     results = {}
     for split in splits:

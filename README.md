@@ -29,8 +29,8 @@ All models use the same architecture with **131M parameters** (131,420,928 param
 | 2   | mft-embeddingmagibu  | `alibayram/mft-downstream-task-embeddingmagibu`  | MFT       | Cloned from EmbeddingMagibu | 131M       |
 | 3   | tabi-embeddinggemma  | `alibayram/tabi-downstream-task-embeddinggemma`  | TabiBERT  | Cloned from EmbeddingGemma  | 131M       |
 | 4   | tabi-embeddingmagibu | `alibayram/tabi-downstream-task-embeddingmagibu` | TabiBERT  | Cloned from EmbeddingMagibu | 131M       |
-| 5   | random-mft-init      | `alibayram/random-mft-init`                      | MFT       | Random Xavier init          | 131M       |
-| 6   | random-tabi-init     | `alibayram/random-tabi-init`                     | TabiBERT  | Random Xavier init          | 131M       |
+| 5   | mft-random-init      | `alibayram/mft-random-init`                      | MFT       | Random Xavier init          | 131M       |
+| 6   | tabi-random-init     | `alibayram/tabi-random-init`                     | TabiBERT  | Random Xavier init          | 131M       |
 
 > **Note:** Both EmbeddingGemma (originally 262K vocab → 300M params) and EmbeddingMagibu (originally 131K vocab → 200M params) are resized to 32K vocab, resulting in identical parameter counts. The extra ~5M params come from Dense projection layers in the SentenceTransformer.
 
@@ -39,9 +39,15 @@ All models use the same architecture with **131M parameters** (131,420,928 param
 Traditional BPE tokenizers split Turkish words arbitrarily, losing morphological information:
 
 ```
-BPE (TabiBERT): "evlerinden" → ["evl", "er", "ind", "en"]
+BPE (Theoretical): "evlerinden" → ["evl", "er", "ind", "en"]
+BPE (TabiBERT): "evlerinden" → ["ev", "lerinden"]
 MFT Tokenizer:  "evlerinden" → ["ev", "ler", "in", "den"]
                                  (root) (plural) (poss.) (ablative)
+
+# another example: "Yapay zeka ve makine öğrenmesi"
+BPE (Theoretical) → ["yapay", "zeka", "ve", "makine", "öğrenmesi"]
+BPE (TabiBERT) → ['Yap', 'ay', ' zek', 'a ve ', 'makine ', 'öğren', 'mesi']
+MFT Tokenizer → ['<uppercase>', ' yapay', ' zeka', ' ve', ' makine', ' öğren', 'me', 'si']
 ```
 
 MFT preserves morphological structure:
@@ -100,8 +106,7 @@ tr-tokenizer-train/
 ├── mft_embeddingmagibu_cloner.py
 ├── tabi_embeddinggemma_cloner.py
 ├── tabi_embeddingmagibu_cloner.py
-├── random_mft_embeddinggemma.py      # Random init scripts
-├── random_tabi_embeddinggemma.py
+├── random_init.py                    # Random init (both tokenizers, seed=42)
 │
 └── sentence_transformers/    # Modified library with custom_tokenizer support
 ```
@@ -122,35 +127,61 @@ echo "HF_TOKEN=your_token_here" > .env
 ### Generate Base Models
 
 ```bash
-# Cloned embeddings
+# Cloned embeddings (mean pooling from source model)
 python mft_embeddinggemma_cloner.py
+python mft_embeddingmagibu_cloner.py
 python tabi_embeddinggemma_cloner.py
+python tabi_embeddingmagibu_cloner.py
 
-# Random initialization baselines
-python random_mft_embeddinggemma.py
-python random_tabi_embeddinggemma.py
+# Random initialization baselines (same seed=42 for both)
+python random_init.py
 ```
 
 ### Evaluate
 
 ```bash
-python evaluate_sts_tr.py --model "alibayram/mft-downstream-task-embeddinggemma"
+python evaluate_sts_tr.py -m "alibayram/mft-downstream-task-embeddinggemma" "alibayram/mft-downstream-task-embeddingmagibu" "alibayram/tabi-downstream-task-embeddinggemma" "alibayram/tabi-downstream-task-embeddingmagibu" "alibayram/mft-random-init" "alibayram/tabi-random-init"
 ```
 
 ## 📊 Results
 
-Results will be tracked in `sts_benchmark_results.json` after each evaluation run. We compare:
+### Baseline Results (Before Training)
+
+Evaluation on Turkish STS benchmark (`figenfikri/stsb_tr`) using pre-training embeddings:
+
+| Model                                            | Tokenizer | Init Source      | Pearson    | Spearman   |
+| ------------------------------------------------ | --------- | ---------------- | ---------- | ---------- |
+| `alibayram/mft-downstream-task-embeddingmagibu`  | **MFT**   | EmbeddingMagibu  | **0.6107** | **0.5965** |
+| `alibayram/mft-random-init`                      | **MFT**   | Random (seed=42) | 0.4709     | 0.4596     |
+| `alibayram/mft-downstream-task-embeddinggemma`   | **MFT**   | EmbeddingGemma   | 0.4497     | 0.4382     |
+| `alibayram/tabi-downstream-task-embeddingmagibu` | TabiBERT  | EmbeddingMagibu  | 0.4246     | 0.4172     |
+| `alibayram/tabi-random-init`                     | TabiBERT  | Random (seed=42) | 0.4053     | 0.3860     |
+| `alibayram/tabi-downstream-task-embeddinggemma`  | TabiBERT  | EmbeddingGemma   | 0.3830     | 0.3722     |
+
+#### Key Observations
+
+1. **MFT consistently outperforms BPE** across all initialization strategies
+2. **Best baseline**: MFT + EmbeddingMagibu cloning achieves 0.61 Pearson (vs 0.42 for TabiBERT)
+3. **EmbeddingMagibu > EmbeddingGemma** for both tokenizers as clone source
+
+> 💡 **Insight**: The morphologically-aware vocabulary design of MFT provides a strong inductive bias that improves semantic similarity even before any fine-tuning.
+
+### Post-Training Results
+
+Results will be tracked after training in `sts_benchmark_results.json`. We compare:
 
 - **Pearson correlation** with human similarity scores
 - **Spearman correlation** (rank-based)
-- Performance across training checkpoints
+- Performance across training checkpoints and epochs
 
 ## 🔧 Technical Details
 
 ### Embedding Initialization Strategies
 
 1. **Cloned (Mean Pooling)**: For each target token, find matching source tokens and average their embeddings
-2. **Random (Xavier)**: Initialize all embeddings randomly using Xavier uniform initialization
+2. **Random (Xavier, Seeded)**: Initialize all parameters randomly using Xavier uniform initialization with a fixed seed (42) for reproducibility. The `random_init.py` script creates the model **once** and pushes to both repos—only the tokenizer files differ:
+   - `alibayram/mft-random-init`: No tokenizer files (uses custom `TurkishTokenizer` at inference)
+   - `alibayram/tabi-random-init`: Includes TabiBERT tokenizer files
 
 ### Why TabiBERT was pruned to 32K?
 

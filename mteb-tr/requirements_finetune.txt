@@ -1,0 +1,21 @@
+# Requirements for Gradual Fine-tuning Script
+# Install with: pip install -r requirements_finetune.txt
+
+# Core ML
+torch>=2.0.0
+sentence-transformers>=3.0.0
+transformers>=4.40.0
+
+# Data
+datasets>=2.19.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Logging & Hub (optional but recommended)
+wandb>=0.16.0
+huggingface_hub>=0.20.0
+
+# Utilities
+tqdm>=4.65.0
+numpy>=1.24.0

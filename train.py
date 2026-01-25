@@ -152,6 +152,9 @@ for i, model_cfg in enumerate(MODELS):
     model_id = model_cfg["model_id"]
     input_column = model_cfg["input_ids_column"]
 
+    if model_name == "mft-random-init":
+        continue
+
     logger.info(f"\n[{i+1}/{len(MODELS)}] Starting training for: {model_name}")
     logger.info(f"Model ID: {model_id}")
     logger.info(f"Input Column: {input_column}")
@@ -196,6 +199,12 @@ for i, model_cfg in enumerate(MODELS):
         del trainer
     if "full_config" in locals():
         del full_config
+
+    # Cleanup
+    import gc
+
+    import torch
+
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()

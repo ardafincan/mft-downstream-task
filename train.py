@@ -45,6 +45,16 @@ DATASET_ID = "alibayram/cosmos-corpus-encoded"
 # Models configuration
 MODELS = [
     {
+        "name": "mft-random-init",
+        "model_id": "alibayram/mft-random-init",
+        "input_ids_column": "mft_input_ids",
+    },
+    {
+        "name": "tabi-random-init",
+        "model_id": "alibayram/tabi-random-init",
+        "input_ids_column": "tabi_input_ids",
+    },
+    {
         "name": "mft-embeddinggemma",
         "model_id": "alibayram/mft-downstream-task-embeddinggemma",
         "input_ids_column": "mft_input_ids",
@@ -64,16 +74,6 @@ MODELS = [
         "model_id": "alibayram/tabi-downstream-task-embeddingmagibu",
         "input_ids_column": "tabi_input_ids",
     },
-    {
-        "name": "mft-random-init",
-        "model_id": "alibayram/mft-random-init",
-        "input_ids_column": "mft_input_ids",
-    },
-    {
-        "name": "tabi-random-init",
-        "model_id": "alibayram/tabi-random-init",
-        "input_ids_column": "tabi_input_ids",
-    },
 ]
 
 logger.info(f"Found {len(MODELS)} models to train.")
@@ -86,7 +86,7 @@ for i, model_cfg in enumerate(MODELS):
     model_id = model_cfg["model_id"]
     input_column = model_cfg["input_ids_column"]
 
-    if model_name == "mft-embeddinggemma":
+    if model_name.startswith("mft") or model_name.startswith("tabi"):
         logger.info(f"Skipping Phase 1 for {model_name} (already 100-step trained).")
         continue
 

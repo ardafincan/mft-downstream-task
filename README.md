@@ -85,6 +85,22 @@ python evaluate_sts_tr.py --model "model1" "model2" "model3"
 
 Results are saved to `sts_benchmark_results.json`.
 
+### 📊 Generating Tables and Charts
+
+To generate a detailed Markdown report and visualizations from the results JSON:
+
+```bash
+python generate_sts_tables.py
+```
+
+This script will:
+
+- Parse `sts_benchmark_results.json`
+- Generate separate tables for Test and Train splits
+- Highlight results for MFT models and their scores
+- Create line charts (`sts_benchmark_chart_*.png`) visualizing performance over checkpoints
+- Export everything to `STS_BENCHMARK_RESULTS.md`
+
 ## ⚠️ Important: Using MFT Models
 
 Models with MFT tokenizer **do not include tokenizer.json** because the tokenizer is morphology-based (not BPE). You must use the modified `sentence_transformers` library included in this repo:

@@ -1,0 +1,32 @@
+{
+  "dataset_revision": "main",
+  "task_name": "TurkishColumnWritingClustering",
+  "mteb_version": "1.31.3",
+  "scores": {
+    "test": [
+      {
+        "v_measure": 0.637075,
+        "v_measure_std": 0.030715,
+        "v_measures": [
+          0.656599,
+          0.604014,
+          0.599636,
+          0.594302,
+          0.644853,
+          0.685623,
+          0.65389,
+          0.613199,
+          0.674632,
+          0.644
+        ],
+        "main_score": 0.637075,
+        "hf_subset": "default",
+        "languages": [
+          "tur-Latn"
+        ]
+      }
+    ]
+  },
+  "evaluation_time": 112.5046591758728,
+  "kg_co2_emissions": null
+}

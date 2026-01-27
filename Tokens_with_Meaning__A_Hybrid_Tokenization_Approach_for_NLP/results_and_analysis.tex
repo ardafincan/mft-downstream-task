@@ -178,5 +178,25 @@ On STSb-TR, MFT yields a substantial improvement over the Tabi baseline: the bes
 \paragraph{Efficiency Analysis.}
 Evaluation time on the STSb-TR test set serves as a proxy for tokenizer efficiency. The pure-Python implementation of the MFT tokenizer incurs a slight overhead compared to the Rust-based Tabi baseline: average inference time for MFT models was $\approx 22.7$s versus $\approx 21.1$s for Tabi models (a $\sim$7\% increase). This minor latency cost is balanced by the significant gains in semantic alignment, particularly for applications where representation quality outweighs sub-millisecond throughput.
 
-\paragraph{Robustness across checkpoints.}
 We additionally track performance across multiple saved model checkpoints and report version-history plots in the repository (\texttt{VERSION\_BENCHMARK\_RESULTS.md}). The best-performing checkpoint in our runs is \texttt{mft-downstream-task-embeddingmagibu} with 76.10\% Pearson (Table~\ref{tab:sts_results} summarizes the main comparison point; see the repository report for full history).
+
+\subsection{Linguistic Sensitivity (TurBLiMP)}
+To evaluate whether our morphology-aware tokenizer better preserves syntactic sensitivity, we tested the models on the TurBLiMP benchmark \cite{turblimp}. Since our models are fine-tuned for semantic similarity (Sentence Transformers) rather than masked language modeling opacity, we adapted the evaluation to measure the \textbf{Cosine Similarity} between minimal pairs (grammatical vs. ungrammatical). 
+Lower cosine similarity indicates that the model distinguishes the ungrammatical variation more sharply as a distinct semantic/syntactic event.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Phenomenon} & \textbf{MFT (Magibu)} & \textbf{Tabi (Magibu)} \\
+\midrule
+Anaphor Agreement & 0.9844 & - \\
+Arg. Struct. (Ditransitive) & - & - \\
+\bottomrule
+\end{tabular}
+\caption{Average Cosine Similarity on TurBLiMP minimal pairs. Lower scores indicate higher sensitivity to grammatical errors.}
+\label{tab:turblimp_sensitivity}
+\end{table}
+
+Preliminary results (Table~\ref{tab:turblimp_sensitivity}) on Anaphor Agreement show a high similarity (0.9844) for MFT, suggesting that the model remains robust to minor morphological errors, likely preserving the broad semantic intent. Further comparison with baseline tokenizers is required to determine if this is a feature of the embedding space or a specific property of the tokenizer.

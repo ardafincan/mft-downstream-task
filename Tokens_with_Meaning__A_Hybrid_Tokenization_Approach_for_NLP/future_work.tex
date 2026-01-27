@@ -12,8 +12,8 @@ Turkish morphophonology includes alternations and exceptions beyond the subset c
 \paragraph{Edge cases and losslessness.}
 Capitalization beyond simple word-initial case (e.g., acronyms and mixed-case identifiers such as \texttt{HTTPServer}) remains imperfect under the current \texttt{<uppercase>} marker design. Improving case preservation without vocabulary inflation is an important practical refinement.
 
-\paragraph{Efficiency characterization.}
-Our TR-MMLU table reports processing time for the proposed tokenizer, but we do not provide comparable speed measurements for all baselines. Future work should include standardized throughput/latency evaluation across tokenizers and analyze the trade-off between linguistic purity, token count, and downstream latency.
-
 \paragraph{Additional benchmarks.}
-To strengthen the linguistic motivation, future experiments should evaluate models (not only tokenizers) on targeted linguistic benchmarks where morphology matters, alongside broad downstream suites (e.g., Turkish-specific or multilingual BLiMP-style evaluations).
+To strengthen the linguistic motivation, future experiments should evaluate models on multilingual benchmarks where morphology matters (e.g., MultiBLiMP), extending our Turkish-specific findings to a broader typological scope.
+
+\paragraph{Morphological Generation.}
+While we evaluated representation quality, the generative capabilities of MFT-based models remain to be explored. Integrating the decoder into a sequence-to-sequence generation pipeline would allow for measuring the impact of morphological tokenization on text generation quality and controllability.

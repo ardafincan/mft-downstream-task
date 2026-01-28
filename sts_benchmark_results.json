@@ -44,28 +44,6 @@
     ]
   },
   {
-    "timestamp": "2026-01-28T03:43:00.324913",
-    "dataset": "figenfikri/stsb_tr",
-    "results": [
-      {
-        "model": "alibayram/newmindaiMursit-random-init",
-        "pearson": 0.4141,
-        "spearman": 0.3856,
-        "num_samples": 1379,
-        "split": "test",
-        "processing_time_seconds": 6.24
-      },
-      {
-        "model": "alibayram/cosmosGPT2-random-init",
-        "pearson": 0.402,
-        "spearman": 0.3775,
-        "num_samples": 1379,
-        "split": "test",
-        "processing_time_seconds": 7.24
-      }
-    ]
-  },
-  {
     "timestamp": "2026-01-28T04:35:55.450351",
     "dataset": "figenfikri/stsb_tr",
     "results": [
@@ -84,6 +62,351 @@
         "num_samples": 1379,
         "split": "test",
         "processing_time_seconds": 7.84
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:51:34+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3891,
+        "spearman": 0.3803,
+        "num_samples": 1379,
+        "processing_time_seconds": 11.33,
+        "revision": "1d550a706cd2fcc86b6989a686bd3d8129a0f1cb"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:48:39+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3894,
+        "spearman": 0.3805,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.68,
+        "revision": "c75ded9969913dd7bdfc4e6f685e91f3220fb0b3"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:43:28+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3891,
+        "spearman": 0.3805,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.5,
+        "revision": "f9eba988d55917bef47db32f245e34c49bd0adab"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:38:27+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3888,
+        "spearman": 0.38,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.09,
+        "revision": "c810ca517b5d5bee6dd17108738fbb066c3cc943"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:33:19+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3882,
+        "spearman": 0.3796,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.84,
+        "revision": "b5518f82e2645724d1b91aa0adec363141bde7b9"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:28:06+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3885,
+        "spearman": 0.3797,
+        "num_samples": 1379,
+        "processing_time_seconds": 10.01,
+        "revision": "ca1a1ea0fb7824e390692666827f203d5c48e5b0"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:23:01+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3878,
+        "spearman": 0.3792,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.64,
+        "revision": "e7069df894b998fc0b7d301c0e5a0ac1fdb4712b"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:17:50+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3875,
+        "spearman": 0.3789,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.29,
+        "revision": "22a4119f068629ab40b082dff4c674e511d2bfeb"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:12:46+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3868,
+        "spearman": 0.3785,
+        "num_samples": 1379,
+        "processing_time_seconds": 7.89,
+        "revision": "ef0fff2ee064a890f2ea752b74645c890007c96e"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:07:33+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3857,
+        "spearman": 0.3774,
+        "num_samples": 1379,
+        "processing_time_seconds": 7.95,
+        "revision": "9c579577e57d8bba17558d08009b28cfe65f329c"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T10:02:30+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3835,
+        "spearman": 0.3753,
+        "num_samples": 1379,
+        "processing_time_seconds": 13.21,
+        "revision": "881d3ec49f25095beba9a546d9832058d9935bc1"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:57:31+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.379,
+        "spearman": 0.3708,
+        "num_samples": 1379,
+        "processing_time_seconds": 11.55,
+        "revision": "a2ae4234d7c90fcf60c16e128fa5044a7765ae0d"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:52:32+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3742,
+        "spearman": 0.3659,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.62,
+        "revision": "3738a0e5fdce757563b9c89b6c4f1e0b9d06b023"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:47:32+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3725,
+        "spearman": 0.3645,
+        "num_samples": 1379,
+        "processing_time_seconds": 14.28,
+        "revision": "028f25aacd0d8188cfdaac05dd04cf207ca87925"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:42:33+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3717,
+        "spearman": 0.3622,
+        "num_samples": 1379,
+        "processing_time_seconds": 12.93,
+        "revision": "4605d45e040309a6cab3bb4d890cdf4bfb477e09"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:37:31+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3657,
+        "spearman": 0.3562,
+        "num_samples": 1379,
+        "processing_time_seconds": 14.18,
+        "revision": "0befaa1760104c64817246ecae78f0171e484332"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:32:31+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3619,
+        "spearman": 0.3514,
+        "num_samples": 1379,
+        "processing_time_seconds": 13.41,
+        "revision": "bec84ee610300e5f64f98e4258073aa8453f9493"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T09:27:31+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3622,
+        "spearman": 0.3502,
+        "num_samples": 1379,
+        "processing_time_seconds": 12.28,
+        "revision": "0bf4d5d6a3386242f8859c8705afe3f3c6d74a7d"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T01:35:43+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3173,
+        "spearman": 0.3067,
+        "num_samples": 1379,
+        "processing_time_seconds": 8.95,
+        "revision": "2d725d35b18c97c4ec1d260d6917a292e9342c01"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T01:20:16+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.2866,
+        "spearman": 0.2816,
+        "num_samples": 1379,
+        "processing_time_seconds": 8.13,
+        "revision": "1ee61483e6fbde15c09f1143781bbb609679a766"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T01:15:15+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.3275,
+        "spearman": 0.3165,
+        "num_samples": 1379,
+        "processing_time_seconds": 13.83,
+        "revision": "17f6e4a8290deb6452ca53af7b061c25acfc8bd0"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T00:28:11+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": 0.402,
+        "spearman": 0.3775,
+        "num_samples": 1379,
+        "processing_time_seconds": 9.71,
+        "revision": "8de00d306ee91ef3715822cb22a0b12863dadc3c"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-01-28T00:25:15+00:00",
+    "dataset": "figenfikri/stsb_tr",
+    "results": [
+      {
+        "model": "alibayram/cosmosGPT2-random-init",
+        "split": "test",
+        "pearson": null,
+        "spearman": null,
+        "num_samples": null,
+        "processing_time_seconds": null,
+        "revision": "4babebb88e02f2e0574e24314255c11b00ebe243"
       }
     ]
   }

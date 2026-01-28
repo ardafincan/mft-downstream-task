@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from typing import Literal
 
@@ -333,12 +334,27 @@ class EmbeddingDistillationTrainer:
         self._original_model.save(path)
         logger.info(f"Model saved: {path}")
 
-    def push_to_hub(self) -> str:
-        """Push model to HuggingFace Hub."""
-        url = self._original_model.push_to_hub(
-            repo_id=self.config.hub_model_id,
-            token=self.config.hub_token,
-            exist_ok=True,
-        )
-        logger.info(f"Pushed to: {url}")
-        return url
+    def push_to_hub(self) -> str | None:
+        """Push model to HuggingFace Hub with retries."""
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                url = self._original_model.push_to_hub(
+                    repo_id=self.config.hub_model_id,
+                    token=self.config.hub_token,
+                    exist_ok=True,
+                )
+                logger.info(f"Pushed to: {url}")
+                return url
+            except Exception as e:
+                logger.warning(
+                    f"Failed to push to hub (attempt {attempt + 1}/{max_retries}): {e}"
+                )
+                if attempt < max_retries - 1:
+                    logger.info("Retrying in 30 seconds...")
+                    time.sleep(30)
+                else:
+                    logger.error(
+                        "All attempts to push to hub failed. Continuing pipeline..."
+                    )
+                    return None

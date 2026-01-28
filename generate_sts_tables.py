@@ -373,6 +373,8 @@ def main():
         if ts_raw:
             try:
                 ts_obj = datetime.fromisoformat(ts_raw)
+                if ts_obj.tzinfo is not None:
+                    ts_obj = ts_obj.replace(tzinfo=None)
                 ts_display = ts_obj.strftime("%Y-%m-%d %H:%M:%S")
             except ValueError:
                 pass
@@ -487,6 +489,80 @@ def main():
         f.write("# STS Benchmark Results Report\n\n" + output_content)
 
     print("\nResults exported to STS_BENCHMARK_RESULTS.md")
+
+    # Generate Version Benchmark Report
+    generate_version_report(entries_by_split)
+
+
+def generate_version_report(entries_by_split):
+    """Generate VERSION_BENCHMARK_RESULTS.md from test split data."""
+    test_entries = entries_by_split.get("test", [])
+    if not test_entries:
+        return
+
+    # Filter for random init models or versioned runs
+    # We look for runs that have 'revision' field or are part of the version history
+    # The merged data should have 'revision'
+
+    # Group by model
+    model_data = {}
+    for e in test_entries:
+        model_data.setdefault(e["model"], []).append(e)
+
+    lines = ["# Version Benchmark Results Report\n"]
+    lines.append("# 📝 Detailed Analysis Summary\n")
+
+    # Find best overall
+    best_overall = None
+    for m, entries in model_data.items():
+        if not entries:
+            continue
+        best_model = max(entries, key=lambda x: x.get("spearman", 0) or 0)
+        if best_overall is None or (best_model.get("spearman", 0) or 0) > (
+            best_overall.get("spearman", 0) or 0
+        ):
+            best_overall = best_model
+
+    if best_overall:
+        lines.append("### 🏆 Overall Best Performance\n")
+        rev = best_overall.get("revision", "N/A")[:8]
+        lines.append(
+            f"The best performing model version is **{best_overall['model']}** (Rev: `{rev}`) with a Pearson score of **{best_overall['pearson']*100:.2f}%** and Spearman of **{best_overall['spearman']*100:.2f}%**.\n"
+        )
+
+    lines.append("## Performance Charts\n")
+    lines.append("### Pearson Correlation\n")
+    lines.append("![Pearson Performance](version_history_pearson.png)\n")
+    lines.append("### Spearman Correlation\n")
+    lines.append("![Spearman Performance](version_history_spearman.png)\n")
+
+    lines.append("# 📜 Detailed Version History\n")
+
+    for model in sorted(model_data.keys()):
+        entries = model_data[model]
+        # Sort by timestamp descending
+        entries.sort(key=lambda x: x["timestamp_obj"], reverse=True)
+
+        lines.append(f"## {model}\n")
+        lines.append(f"| Date | Revision | Pearson | Spearman | Samples |")
+        lines.append(f"| --- | --- | --- | --- | --- |")
+
+        for e in entries:
+            date_str = e["timestamp_display"]
+            rev = e.get("revision", "N/A")
+            if rev and len(rev) > 8:
+                rev = rev[:8]
+            pearson = f"{e['pearson']*100:.2f}%"
+            spearman = f"{e['spearman']*100:.2f}%"
+            samples = e.get("num_samples", "-")
+            lines.append(f"| {date_str} | {rev} | {pearson} | {spearman} | {samples} |")
+
+        lines.append("\n")
+
+    with open("VERSION_BENCHMARK_RESULTS.md", "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    print("\nVersion report exported to VERSION_BENCHMARK_RESULTS.md")
 
 
 if __name__ == "__main__":

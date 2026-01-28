@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 import turkish_tokenizer as tt
 
+
 @dataclass
 class STSResult:
     """Results from STS evaluation."""
@@ -99,9 +100,11 @@ def evaluate_sts_tr(
     embeddings2 = embeddings[len(sentences1) :]
 
     # Compute cosine similarities (convert to float32 for MPS compatibility)
-    similarities = torch.nn.functional.cosine_similarity(
-        embeddings1.float(), embeddings2.float()
-    ).cpu().numpy()
+    similarities = (
+        torch.nn.functional.cosine_similarity(embeddings1.float(), embeddings2.float())
+        .cpu()
+        .numpy()
+    )
 
     # Compute correlations
     pearson = pearsonr(similarities, scores)[0]
@@ -146,9 +149,16 @@ def evaluate_model(
 
     logger.info(f"Loading model: {model_name_or_path}")
     if "mft" in model_name_or_path:
-        model = SentenceTransformer(model_name_or_path, device=device, trust_remote_code=True, custom_tokenizer=tt.TurkishTokenizer())
+        model = SentenceTransformer(
+            model_name_or_path,
+            device=device,
+            trust_remote_code=True,
+            custom_tokenizer=tt.TurkishTokenizer(),
+        )
     else:
-        model = SentenceTransformer(model_name_or_path, device=device, trust_remote_code=True)
+        model = SentenceTransformer(
+            model_name_or_path, device=device, trust_remote_code=True
+        )
 
     results = {}
     for split in splits:
@@ -254,7 +264,9 @@ def compare_models(
 
     for result in results:
         model_display = (
-            result.model_name[:48] + ".." if len(result.model_name) > 50 else result.model_name
+            result.model_name[:48] + ".."
+            if len(result.model_name) > 50
+            else result.model_name
         )
         print(
             f"{model_display:<50} {result.pearson:>8.4f} {result.spearman:>8.4f} {result.processing_time:>8.2f}s"

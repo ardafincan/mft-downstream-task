@@ -11,7 +11,7 @@ def generate_latex_table():
     base_dir = "turblimp_results"
 
     # Files
-    mft_file = os.path.join(base_dir, "mft-random-init_turblimp_sensitivity.csv")
+    mft_file = os.path.join(base_dir, "cosmosGPT2-random-init_turblimp_sensitivity.csv")
     tabi_file = os.path.join(base_dir, "tabi-random-init_turblimp_sensitivity.csv")
 
     if not os.path.exists(mft_file) or not os.path.exists(tabi_file):

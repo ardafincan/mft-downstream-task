@@ -1,0 +1,269 @@
+{
+  "model": "alibayram/cosmosGPT2-random-init",
+  "dataset": "figenfikri/stsb_tr",
+  "split": "test",
+  "timestamp": "2026-01-28T14:37:10.529470",
+  "total_versions": 23,
+  "successful_evaluations": 22,
+  "best_version": {
+    "revision": "c75ded9969913dd7bdfc4e6f685e91f3220fb0b3",
+    "revision_short": "c75ded99",
+    "split": "test",
+    "pearson": 0.3894,
+    "spearman": 0.3805,
+    "num_samples": 1379,
+    "processing_time_seconds": 9.68,
+    "commit_title": "Add new SentenceTransformer model",
+    "commit_date": "2026-01-28T10:48:39+00:00"
+  },
+  "results": [
+    {
+      "revision": "1d550a706cd2fcc86b6989a686bd3d8129a0f1cb",
+      "revision_short": "1d550a70",
+      "split": "test",
+      "pearson": 0.3891,
+      "spearman": 0.3803,
+      "num_samples": 1379,
+      "processing_time_seconds": 11.33,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:51:34+00:00"
+    },
+    {
+      "revision": "c75ded9969913dd7bdfc4e6f685e91f3220fb0b3",
+      "revision_short": "c75ded99",
+      "split": "test",
+      "pearson": 0.3894,
+      "spearman": 0.3805,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.68,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:48:39+00:00"
+    },
+    {
+      "revision": "f9eba988d55917bef47db32f245e34c49bd0adab",
+      "revision_short": "f9eba988",
+      "split": "test",
+      "pearson": 0.3891,
+      "spearman": 0.3805,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.5,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:43:28+00:00"
+    },
+    {
+      "revision": "c810ca517b5d5bee6dd17108738fbb066c3cc943",
+      "revision_short": "c810ca51",
+      "split": "test",
+      "pearson": 0.3888,
+      "spearman": 0.38,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.09,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:38:27+00:00"
+    },
+    {
+      "revision": "b5518f82e2645724d1b91aa0adec363141bde7b9",
+      "revision_short": "b5518f82",
+      "split": "test",
+      "pearson": 0.3882,
+      "spearman": 0.3796,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.84,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:33:19+00:00"
+    },
+    {
+      "revision": "ca1a1ea0fb7824e390692666827f203d5c48e5b0",
+      "revision_short": "ca1a1ea0",
+      "split": "test",
+      "pearson": 0.3885,
+      "spearman": 0.3797,
+      "num_samples": 1379,
+      "processing_time_seconds": 10.01,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:28:06+00:00"
+    },
+    {
+      "revision": "e7069df894b998fc0b7d301c0e5a0ac1fdb4712b",
+      "revision_short": "e7069df8",
+      "split": "test",
+      "pearson": 0.3878,
+      "spearman": 0.3792,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.64,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:23:01+00:00"
+    },
+    {
+      "revision": "22a4119f068629ab40b082dff4c674e511d2bfeb",
+      "revision_short": "22a4119f",
+      "split": "test",
+      "pearson": 0.3875,
+      "spearman": 0.3789,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.29,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:17:50+00:00"
+    },
+    {
+      "revision": "ef0fff2ee064a890f2ea752b74645c890007c96e",
+      "revision_short": "ef0fff2e",
+      "split": "test",
+      "pearson": 0.3868,
+      "spearman": 0.3785,
+      "num_samples": 1379,
+      "processing_time_seconds": 7.89,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:12:46+00:00"
+    },
+    {
+      "revision": "9c579577e57d8bba17558d08009b28cfe65f329c",
+      "revision_short": "9c579577",
+      "split": "test",
+      "pearson": 0.3857,
+      "spearman": 0.3774,
+      "num_samples": 1379,
+      "processing_time_seconds": 7.95,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:07:33+00:00"
+    },
+    {
+      "revision": "881d3ec49f25095beba9a546d9832058d9935bc1",
+      "revision_short": "881d3ec4",
+      "split": "test",
+      "pearson": 0.3835,
+      "spearman": 0.3753,
+      "num_samples": 1379,
+      "processing_time_seconds": 13.21,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T10:02:30+00:00"
+    },
+    {
+      "revision": "a2ae4234d7c90fcf60c16e128fa5044a7765ae0d",
+      "revision_short": "a2ae4234",
+      "split": "test",
+      "pearson": 0.379,
+      "spearman": 0.3708,
+      "num_samples": 1379,
+      "processing_time_seconds": 11.55,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:57:31+00:00"
+    },
+    {
+      "revision": "3738a0e5fdce757563b9c89b6c4f1e0b9d06b023",
+      "revision_short": "3738a0e5",
+      "split": "test",
+      "pearson": 0.3742,
+      "spearman": 0.3659,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.62,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:52:32+00:00"
+    },
+    {
+      "revision": "028f25aacd0d8188cfdaac05dd04cf207ca87925",
+      "revision_short": "028f25aa",
+      "split": "test",
+      "pearson": 0.3725,
+      "spearman": 0.3645,
+      "num_samples": 1379,
+      "processing_time_seconds": 14.28,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:47:32+00:00"
+    },
+    {
+      "revision": "4605d45e040309a6cab3bb4d890cdf4bfb477e09",
+      "revision_short": "4605d45e",
+      "split": "test",
+      "pearson": 0.3717,
+      "spearman": 0.3622,
+      "num_samples": 1379,
+      "processing_time_seconds": 12.93,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:42:33+00:00"
+    },
+    {
+      "revision": "0befaa1760104c64817246ecae78f0171e484332",
+      "revision_short": "0befaa17",
+      "split": "test",
+      "pearson": 0.3657,
+      "spearman": 0.3562,
+      "num_samples": 1379,
+      "processing_time_seconds": 14.18,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:37:31+00:00"
+    },
+    {
+      "revision": "bec84ee610300e5f64f98e4258073aa8453f9493",
+      "revision_short": "bec84ee6",
+      "split": "test",
+      "pearson": 0.3619,
+      "spearman": 0.3514,
+      "num_samples": 1379,
+      "processing_time_seconds": 13.41,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:32:31+00:00"
+    },
+    {
+      "revision": "0bf4d5d6a3386242f8859c8705afe3f3c6d74a7d",
+      "revision_short": "0bf4d5d6",
+      "split": "test",
+      "pearson": 0.3622,
+      "spearman": 0.3502,
+      "num_samples": 1379,
+      "processing_time_seconds": 12.28,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T09:27:31+00:00"
+    },
+    {
+      "revision": "2d725d35b18c97c4ec1d260d6917a292e9342c01",
+      "revision_short": "2d725d35",
+      "split": "test",
+      "pearson": 0.3173,
+      "spearman": 0.3067,
+      "num_samples": 1379,
+      "processing_time_seconds": 8.95,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T01:35:43+00:00"
+    },
+    {
+      "revision": "1ee61483e6fbde15c09f1143781bbb609679a766",
+      "revision_short": "1ee61483",
+      "split": "test",
+      "pearson": 0.2866,
+      "spearman": 0.2816,
+      "num_samples": 1379,
+      "processing_time_seconds": 8.13,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T01:20:16+00:00"
+    },
+    {
+      "revision": "17f6e4a8290deb6452ca53af7b061c25acfc8bd0",
+      "revision_short": "17f6e4a8",
+      "split": "test",
+      "pearson": 0.3275,
+      "spearman": 0.3165,
+      "num_samples": 1379,
+      "processing_time_seconds": 13.83,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T01:15:15+00:00"
+    },
+    {
+      "revision": "8de00d306ee91ef3715822cb22a0b12863dadc3c",
+      "revision_short": "8de00d30",
+      "split": "test",
+      "pearson": 0.402,
+      "spearman": 0.3775,
+      "num_samples": 1379,
+      "processing_time_seconds": 9.71,
+      "commit_title": "Add new SentenceTransformer model",
+      "commit_date": "2026-01-28T00:28:11+00:00"
+    },
+    {
+      "revision": "4babebb88e02f2e0574e24314255c11b00ebe243",
+      "error": "Unrecognized model in alibayram/cosmosGPT2-random-init. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: afmoe, aimv2, aimv2_vision_model, albert, align, altclip, apertus, arcee, aria, aria_text, audio-spectrogram-transformer, audioflamingo3, audioflamingo3_encoder, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, blt, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, cohere2_vision, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, cwm, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v2, deepseek_v3, deepseek_vl, deepseek_vl_hybrid, deformable_detr, deit, depth_anything, depth_pro, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, dinov3_convnext, dinov3_vit, distilbert, doge, donut-swin, dots1, dpr, dpt, edgetam, edgetam_video, edgetam_vision_model, efficientloftr, efficientnet, electra, emu3, encodec, encoder-decoder, eomt, ernie, ernie4_5, ernie4_5_moe, esm, evolla, exaone4, falcon, falcon_h1, falcon_mamba, fast_vlm, fastspeech2_conformer, fastspeech2_conformer_with_hifigan, flaubert, flava, flex_olmo, florence2, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm46v, glm4_moe, glm4v, glm4v_moe, glm4v_moe_text, glm4v_moe_vision, glm4v_text, glm4v_vision, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gpt_oss, gptj, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, hunyuan_v1_dense, hunyuan_v1_moe, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, kosmos-2, kosmos-2.5, kyutai_speech_to_text, lasr_ctc, lasr_encoder, layoutlm, layoutlmv2, layoutlmv3, layoutxlm, led, levit, lfm2, lfm2_moe, lfm2_vl, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longcat_flash, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, megatron-bert, metaclip_2, mgp-str, mimi, minimax, ministral, ministral3, mistral, mistral3, mixtral, mlcd, mllama, mm-grounding-dino, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, modernbert-decoder, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nanochat, nemotron, nllb-moe, nougat, nystromformer, olmo, olmo2, olmo3, olmoe, omdet-turbo, oneformer, openai-gpt, opt, ovis2, owlv2, owlvit, paddleocr_vl, paligemma, parakeet_ctc, parakeet_encoder, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, perception_lm, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, qwen3_next, qwen3_omni_moe, qwen3_vl, qwen3_vl_moe, qwen3_vl_moe_text, qwen3_vl_text, rag, recurrent_gemma, reformer, regnet, rembert, resnet, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam2, sam2_hiera_det_model, sam2_video, sam2_vision_model, sam3, sam3_tracker, sam3_tracker_video, sam3_video, sam3_vision_model, sam3_vit_model, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, seed_oss, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip2_vision_model, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, t5gemma2, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trocr, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, vaultgemma, video_llama_3, video_llama_3_vision, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, voxtral, voxtral_encoder, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xcodec, xglm, xlm, xlm-roberta, xlm-roberta-xl, xlnet, xlstm, xmod, yolos, yoso, zamba, zamba2, zoedepth",
+      "commit_title": "initial commit",
+      "commit_date": "2026-01-28T00:25:15+00:00"
+    }
+  ]
+}

@@ -71,6 +71,7 @@ for i, model_cfg in enumerate(MODELS):
     logger.info(f"Input Column: {input_column}")
 
     warmup_output_dir = f"./trained_models/{model_name}_warmup"
+    continue
 
     warmup_config = EmbeddingTrainerConfig(
         student_model=model_id,

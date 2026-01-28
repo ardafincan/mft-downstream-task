@@ -155,45 +155,15 @@ pip install torch transformers sentence-transformers python-dotenv datasets scip
 echo "HF_TOKEN=your_token_here" > .env
 ```
 
-### Generate Base Models
-
-```bash
-# Cloned embeddings (mean pooling from source model)
-python mft_embeddinggemma_cloner.py
-python mft_embeddingmagibu_cloner.py
-python tabi_embeddinggemma_cloner.py
-python tabi_embeddingmagibu_cloner.py
-
 # Random initialization baselines (same seed=42 for both)
+
 python random_init.py
-```
 
 ### Evaluate
 
 ```bash
-python evaluate_sts_tr.py -m "alibayram/mft-downstream-task-embeddinggemma" "alibayram/mft-downstream-task-embeddingmagibu" "alibayram/tabi-downstream-task-embeddinggemma" "alibayram/tabi-downstream-task-embeddingmagibu" "alibayram/mft-random-init" "alibayram/tabi-random-init"
+python evaluate_sts_tr.py -m "alibayram/mft-random-init" "alibayram/tabi-random-init" "alibayram/cosmosGPT2-random-init" "alibayram/newmindaiMursit-random-init"
 ```
-
-## 📊 Results
-
-### Baseline Results (Before Training)
-
-Evaluation on Turkish STS benchmark (`figenfikri/stsb_tr`) using pre-training embeddings:
-
-| Model                                            | Tokenizer | Init Source      | Pearson    | Spearman   |
-| ------------------------------------------------ | --------- | ---------------- | ---------- | ---------- |
-| `alibayram/mft-downstream-task-embeddingmagibu`  | **MFT**   | EmbeddingMagibu  | **0.6107** | **0.5965** |
-| `alibayram/mft-random-init`                      | **MFT**   | Random (seed=42) | 0.4709     | 0.4596     |
-| `alibayram/mft-downstream-task-embeddinggemma`   | **MFT**   | EmbeddingGemma   | 0.4497     | 0.4382     |
-| `alibayram/tabi-downstream-task-embeddingmagibu` | TabiBERT  | EmbeddingMagibu  | 0.4246     | 0.4172     |
-| `alibayram/tabi-random-init`                     | TabiBERT  | Random (seed=42) | 0.4053     | 0.3860     |
-| `alibayram/tabi-downstream-task-embeddinggemma`  | TabiBERT  | EmbeddingGemma   | 0.3830     | 0.3722     |
-
-#### Key Observations
-
-1. **MFT consistently outperforms BPE** across all initialization strategies
-2. **Best baseline**: MFT + EmbeddingMagibu cloning achieves 0.61 Pearson (vs 0.42 for TabiBERT)
-3. **EmbeddingMagibu > EmbeddingGemma** for both tokenizers as clone source
 
 > 💡 **Insight**: The morphologically-aware vocabulary design of MFT provides a strong inductive bias that improves semantic similarity even before any fine-tuning.
 
@@ -213,6 +183,8 @@ Results will be tracked after training in `sts_benchmark_results.json`. We compa
 2. **Random (Xavier, Seeded)**: Initialize all parameters randomly using Xavier uniform initialization with a fixed seed (42) for reproducibility. The `random_init.py` script creates the model **once** and pushes to both repos—only the tokenizer files differ:
    - `alibayram/mft-random-init`: No tokenizer files (uses custom `TurkishTokenizer` at inference)
    - `alibayram/tabi-random-init`: Includes TabiBERT tokenizer files
+   - `alibayram/cosmosGPT2-random-init`: Includes cosmosGPT2 tokenizer files
+   - `alibayram/newmindaiMursit-random-init`: Includes newmindaiMursit tokenizer files
 
 ### Why TabiBERT was pruned to 32K?
 
@@ -232,7 +204,3 @@ The standard library doesn't support custom tokenizers. Our modifications:
 - [TabiBERT](https://huggingface.co/boun-tabilab/TabiBERT) - Turkish BPE tokenizer source
 - [Turkish STS Benchmark](https://huggingface.co/datasets/figenfikri/stsb_tr) - Evaluation dataset
 - [SentenceTransformers](https://www.sbert.net/) - Embedding framework
-
-## License
-
-This project is open source. See LICENSE file for details.

@@ -30,27 +30,37 @@ The dataset underwent rigorous pre-processing to eliminate runtime tokenization 
 - **Columns:**
   - `mft_input_ids`: Pre-computed integer sequences (MFT Vocab).
   - `tabi_input_ids`: Pre-computed integer sequences (TabiBERT Vocab).
+  - `cosmos_input_ids`: Pre-computed integer sequences (COSMOS Vocab).
+  - `newmindaiMursit_input_ids`: Pre-computed integer sequences (NewmindaiMursit Vocab).
   - `teacher_embedding_final`: Float vectors from the Teacher model.
 
 ## 4. Model Architectures
 
-We evaluate 6 distinct student configurations (3 Architecture pairings $\times$ 2 Tokenizers):
+We evaluate 4 distinct student configurations:
 
 ### Group A: MFT Tokenizer (Custom Morphological)
 
 _Utilizes a hybrid vocabulary of Roots (`kokler.json`), Suffixes (`ekler.json`), and BPE tokens._
 
-1.  **`mft-embeddinggemma`**: embeddinggemma-300m backbone.
-2.  **`mft-embeddingmagibu`**: embeddingmagibu-200m backbone.
-3.  **`mft-random-init`**: Randomly initialized baseline.
+1.  **`mft-random-init`**: Randomly initialized baseline.
 
 ### Group B: Tabi Tokenizer (Standard Subword)
 
 _Utilizes a standard 32k vocabulary from `alibayram/TabiBERT-tokenizer-32k`._
 
-1. **`tabi-embeddinggemma`**: embeddinggemma-300m backbone.
-2. **`tabi-embeddingmagibu`**: embeddingmagibu-200m backbone.
-3. **`tabi-random-init`**: Randomly initialized baseline.
+1. **`tabi-random-init`**: Randomly initialized baseline.
+
+### Group C: COSMOS Tokenizer (Standard Subword)
+
+_Utilizes a standard 32k vocabulary from `alibayram/TabiBERT-tokenizer-32k`._
+
+1. **`cosmos-random-init`**: Randomly initialized baseline.
+
+### Group D: NewmindaiMursit Tokenizer (Standard Subword)
+
+_Utilizes a standard 32k vocabulary from `alibayram/TabiBERT-tokenizer-32k`._
+
+1. **`newmindaiMursit-random-init`**: Randomly initialized baseline.
 
 ## 5. Methodological Framework
 

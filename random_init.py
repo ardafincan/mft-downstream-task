@@ -51,16 +51,16 @@ def init_weights(module):
     elif isinstance(module, nn.Embedding):
         nn.init.xavier_uniform_(module.weight)
     elif isinstance(module, (nn.LayerNorm, nn.RMSNorm)):
-        if hasattr(module, 'weight') and module.weight is not None:
+        if hasattr(module, "weight") and module.weight is not None:
             nn.init.ones_(module.weight)
-        if hasattr(module, 'bias') and module.bias is not None:
+        if hasattr(module, "bias") and module.bias is not None:
             nn.init.zeros_(module.bias)
-    elif hasattr(module, 'weight') and module.weight is not None:
+    elif hasattr(module, "weight") and module.weight is not None:
         if module.weight.dim() >= 2:
             nn.init.xavier_uniform_(module.weight)
         else:
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
-        if hasattr(module, 'bias') and module.bias is not None:
+        if hasattr(module, "bias") and module.bias is not None:
             nn.init.zeros_(module.bias)
 
 
@@ -68,75 +68,120 @@ if __name__ == "__main__":
     print(f"Random Initialization with SEED={SEED}")
     print("Creating single model, pushing to both repos")
     print("=" * 60)
-    
+
     # Set seed
     set_seed(SEED)
-    
+
     # Load SentenceTransformer structure
     print("Loading SentenceTransformer structure...")
     model = SentenceTransformer(org_model_id, token=HF_TOKEN)
-    
+
     # Resize embeddings to 32K
     model[0].auto_model.resize_token_embeddings(VOCAB_SIZE)
-    
+
     # Apply random initialization
     set_seed(SEED)
     print(f"Applying random initialization with seed={SEED}...")
     model.apply(init_weights)
     model = model.to(torch.bfloat16)
-    
+
     # Count parameters
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Total parameters: {total_params:,}")
-    
+
     # Save model
     model.save_pretrained(clone_dir)
-    
+
     # === Push to MFT repo (without tokenizer) ===
     print("\n--- MFT Repository ---")
-    
+
     # Remove tokenizer files for MFT
-    for f in ["tokenizer.json", "tokenizer_config.json", "special_tokens_map.json", "tokenizer.model"]:
+    for f in [
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "special_tokens_map.json",
+        "tokenizer.model",
+    ]:
         path = os.path.join(clone_dir, f)
         if os.path.exists(path):
             os.remove(path)
-    
+
     # Load with custom tokenizer and push
     mft_tokenizer = tt.TurkishTokenizer()
     print(f"MFT tokenizer vocab size: {mft_tokenizer.vocab_size}")
-    
+
     mft_model = SentenceTransformer(clone_dir, custom_tokenizer=mft_tokenizer)
     mft_model = mft_model.to(torch.bfloat16)
-    
+
     print("Uploading to alibayram/mft-random-init...")
     mft_model.push_to_hub("alibayram/mft-random-init", token=HF_TOKEN, exist_ok=True)
     print("✓ Uploaded alibayram/mft-random-init")
-    
+
     del mft_model
-    
+
     # === Push to TabiBERT repo (with tokenizer) ===
     print("\n--- TabiBERT Repository ---")
-    
+
     # Add TabiBERT tokenizer
     tabi_tokenizer = AutoTokenizer.from_pretrained(
-        "alibayram/TabiBERT-tokenizer-32k",
-        token=HF_TOKEN,
-        use_fast=False
+        "alibayram/TabiBERT-tokenizer-32k", token=HF_TOKEN, use_fast=False
     )
     print(f"TabiBERT tokenizer vocab size: {tabi_tokenizer.vocab_size}")
     tabi_tokenizer.save_pretrained(clone_dir)
-    
+
     # Reload and push
     tabi_model = SentenceTransformer(clone_dir)
     tabi_model = tabi_model.to(torch.bfloat16)
-    
+
     print("Uploading to alibayram/tabi-random-init...")
     tabi_model.push_to_hub("alibayram/tabi-random-init", token=HF_TOKEN, exist_ok=True)
     print("✓ Uploaded alibayram/tabi-random-init")
-    
+
+    del tabi_model
+
+    # === Push to cosmosGPT2-random-init ===
+    print("\n--- cosmosGPT2-random-init Repository ---")
+
+    cosmos_tokenizer = AutoTokenizer.from_pretrained(
+        "alibayram/cosmosGPT2-tokenizer-32k", token=HF_TOKEN, use_fast=False
+    )
+    print(f"cosmosGPT2 tokenizer vocab size: {cosmos_tokenizer.vocab_size}")
+    cosmos_tokenizer.save_pretrained(clone_dir)
+
+    # Reload and push
+    cosmos_model = SentenceTransformer(clone_dir)
+    cosmos_model = cosmos_model.to(torch.bfloat16)
+
+    print("Uploading to alibayram/cosmosGPT2-random-init...")
+    cosmos_model.push_to_hub(
+        "alibayram/cosmosGPT2-random-init", token=HF_TOKEN, exist_ok=True
+    )
+    print("✓ Uploaded alibayram/cosmosGPT2-random-init")
+
+    del cosmos_model
+
+    # === Push to newmindaiMursit-random-init ===
+    print("\n--- newmindaiMursit-random-init Repository ---")
+
+    newmindai_tokenizer = AutoTokenizer.from_pretrained(
+        "alibayram/newmindaiMursit-tokenizer-32k", token=HF_TOKEN, use_fast=False
+    )
+    print(f"newmindaiMursit tokenizer vocab size: {newmindai_tokenizer.vocab_size}")
+    newmindai_tokenizer.save_pretrained(clone_dir)
+
+    # Reload and push
+    newmindai_model = SentenceTransformer(clone_dir)
+    newmindai_model = newmindai_model.to(torch.bfloat16)
+
+    print("Uploading to alibayram/newmindaiMursit-random-init...")
+    newmindai_model.push_to_hub(
+        "alibayram/newmindaiMursit-random-init", token=HF_TOKEN, exist_ok=True
+    )
+    print("✓ Uploaded alibayram/newmindaiMursit-random-init")
+
     # Cleanup
     shutil.rmtree(clone_dir)
-    
+
     print("\n" + "=" * 60)
     print("✓ Both repos updated with identical random weights!")
     print(f"✓ Seed: {SEED}")

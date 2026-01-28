@@ -31,7 +31,6 @@
 | XNLI                                   | Pair Classification | **58.21%**             | 57.55%          | 54.72%                      | 57.28%           |
 | XQuADRetrieval                         | Retrieval           | 23.16%                 | **37.33%**      | 25.38%                      | 19.54%           |
 
-
 # 📂 Categorized Results
 
 | Category            | cosmosGPT2-random-init | mft-random-init | newmindaiMursit-random-init | tabi-random-init |
@@ -44,7 +43,6 @@
 | Retrieval           | 20.10%                 | **28.94%**      | 21.12%                      | 18.46%           |
 | STS                 | 38.04%                 | **49.36%**      | 43.75%                      | 33.24%           |
 
-
 # 📊 Overall Average Scores
 
 | Model                       | Average Score | Tasks Evaluated |
@@ -53,6 +51,5 @@
 | newmindaiMursit-random-init | 34.98%        | 26              |
 | cosmosGPT2-random-init      | 34.43%        | 26              |
 | tabi-random-init            | 33.33%        | 26              |
-
 
 ![Average MTEB Scores](mteb_average_scores.png)

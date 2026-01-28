@@ -45,6 +45,16 @@ DATASET_ID = "alibayram/cosmos-corpus-encoded"
 # Models configuration (Just the 2 new random models)
 MODELS = [
     {
+        "name": "mft-random-init",
+        "model_id": "alibayram/mft-random-init",
+        "input_ids_column": "mft_input_ids",
+    },
+    {
+        "name": "tabi-random-init",
+        "model_id": "alibayram/tabi-random-init",
+        "input_ids_column": "tabi_input_ids",
+    },
+    {
         "name": "cosmos-random-init",
         "model_id": "alibayram/cosmosGPT2-random-init",
         "input_ids_column": "cosmos_input_ids",
@@ -71,7 +81,6 @@ for i, model_cfg in enumerate(MODELS):
     logger.info(f"Input Column: {input_column}")
 
     warmup_output_dir = f"./trained_models/{model_name}_warmup"
-    continue
 
     warmup_config = EmbeddingTrainerConfig(
         student_model=model_id,

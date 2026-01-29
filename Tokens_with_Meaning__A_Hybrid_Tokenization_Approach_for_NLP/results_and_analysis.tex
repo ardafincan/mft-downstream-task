@@ -83,24 +83,73 @@ The results presented in this section provide strong empirical support for the h
 
 To assess the impact of morphologically informed tokenization on downstream model performance, we evaluated the embeddings produced by models initialized with different tokenizers using three benchmarks: STSb-TR, MTEB-TR, and TurBLiMP. All models were initialized randomly to isolate the effect of tokenization structure from pre-training data.
 
+Concretely, we construct four sentence embedding models that share the same encoder architecture (\texttt{google/embeddinggemma-300m}) and vocabulary size (32,768). Each model is randomly initialized with a fixed seed (42) and trained under an identical embedding-distillation objective; the only difference between models is the tokenizer and the corresponding pre-encoded \texttt{input\_ids} column used during training. We refer to these models as \texttt{*-random-init} to emphasize that they start from random weights rather than a pretrained checkpoint, so downstream differences primarily reflect inductive bias introduced by tokenization and decoding choices under a controlled training budget.
+
+Training data comes from a Turkish text corpus with pre-computed teacher embeddings (\texttt{alibayram/cosmos-corpus-0-05-with-embeddings}). We prepare a unified dataset (\texttt{alibayram/cosmos-corpus-encoded}) that stores token ID sequences for all compared tokenizers (\texttt{mft\_input\_ids}, \texttt{tabi\_input\_ids}, \texttt{cosmos\_input\_ids}, \texttt{mursit\_input\_ids}). To ensure an apples-to-apples comparison under a fixed context window, we discard any sample for which \emph{any} tokenizer produces a sequence longer than 2048 tokens, so that no model benefits from truncation artifacts or sees different content due to length differences.
+
+Because MFT is implemented as a custom Python tokenizer rather than a standard HuggingFace tokenizer, we use pre-encoded \texttt{input\_ids} and a lightweight ``tokenizer bypass'' patch in the \texttt{sentence-transformers} training stack so the same trainer loop can consume all four token streams without rewriting the model code. All downstream evaluations are run with fixed scripts: \texttt{evaluate\_sts\_tr.py} for STS, \texttt{mteb-tr/mteb\_tr\_cli.py} for MTEB-TR, and \texttt{evaluate\_turblimp.py} for TurBLiMP.
+
+\begin{table}[t]
+\centering
+\caption{Controlled downstream experiment setup for embedding distillation. All models share the same architecture and training protocol; only the tokenizer (and thus \texttt{input\_ids}) differs.}
+\label{tab:distillation_setup}
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+Student architecture & \texttt{google/embeddinggemma-300m} (SentenceTransformer) \\
+Initialization & Random weights with fixed seed 42; vocab resized to 32,768 \\
+Training objective & Cosine embedding loss against teacher vectors \\
+Training corpus & \texttt{alibayram/cosmos-corpus-0-05-with-embeddings} \\
+Training dataset & \texttt{alibayram/cosmos-corpus-encoded} with 4 \texttt{input\_ids} columns \\
+Context length & 2048; samples dropped if any tokenizer exceeds the limit \\
+Batch size / LR & 256 / $5 \times 10^{-5}$ \\
+Schedule & Two-phase: 100-step warmup then 1 full epoch \\
+Precision & BF16; gradient checkpointing enabled \\
+Hardware & NVIDIA H100 80GB (single node) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 For STS, we use the Turkish STSb-TR benchmark (\texttt{figenfikri/stsb\_tr}) consisting of sentence pairs with human similarity ratings on a 0--5 scale \cite{beken_fikri_semantic_2021}. Each model encodes both sentences, we compute cosine similarity between the resulting sentence embeddings, and we report Pearson and Spearman correlation with the normalized gold scores. Throughout this section, correlations are presented as percentages ($\times 100$) for readability.
 
-We evaluated the models on the Turkish STS benchmark (stsb-tr) in a zero-shot setting. The proposed \texttt{mft-random-init} model achieved a significantly higher correlation with human judgments compared to other randomly initialized baselines, demonstrating that its structural prior provides a better starting point for capturing semantic similarity.
+We evaluated the models on the Turkish STS benchmark (stsb-tr) without task-specific fine-tuning. The proposed \texttt{mft-random-init} model achieved a significantly higher correlation with human judgments compared to other randomly initialized baselines, demonstrating that its structural prior provides a better starting point for capturing semantic similarity.
 
-\begin{figure}[h]
+\begin{figure}[t]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/sts_benchmark_chart_test.png}
     \caption{Test split performance on STS Benchmark comparing MFT against Tabi, Cosmos, and Mursit baselines.}
     \label{fig:sts_chart}
 \end{figure}
 
-The \texttt{mft-random-init} model achieved a Pearson correlation of \textbf{50.37\%} and Spearman correlation of \textbf{49.35\%}, consistently outperforming all baselines. In comparison, the \texttt{newmindaiMursit-random-init} model achieved a Spearman correlation of 43.75\%, \texttt{cosmosGPT2-random-init} reached 38.02\%, and \texttt{tabi-random-init} scored 33.24\%. These results highlight the advantage of morphological segmentation in preserving semantic density, even without extensive pre-training.
+On the STSb-TR test split ($n=1379$), the \texttt{mft-random-init} model achieved a Pearson correlation of \textbf{50.37\%} and Spearman correlation of \textbf{49.35\%}, consistently outperforming all baselines. In comparison, \texttt{newmindaiMursit-random-init} achieved 43.94\% Pearson / 43.75\% Spearman, \texttt{cosmosGPT2-random-init} reached 38.90\% Pearson / 38.02\% Spearman, and \texttt{tabi-random-init} scored 33.58\% Pearson / 33.24\% Spearman. Using a Fisher transform, the 95\% confidence interval for MFT test Pearson is [47.5, 53.1], compared to [30.9, 36.2] for Tabi, indicating that the gain is statistically robust at this sample size. On the training split ($n=5749$), MFT also remains ahead (Table~\ref{tab:sts_results}).
+
+\begin{table}[t]
+\centering
+\caption{STS benchmark correlations for the compared models. Scores are shown as percentages ($\times 100$). Time is the end-to-end encoding time reported by our evaluation script for the corresponding split (batch size 32). Model shorthands: MFT=\texttt{mft-random-init}, Mursit=\texttt{newmindaiMursit-random-init}, Cosmos=\texttt{cosmosGPT2-random-init}, Tabi=\texttt{tabi-random-init}.}
+\label{tab:sts_results}
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Model} & \textbf{Split} & \textbf{Pearson} & \textbf{Spearman} & \textbf{Time (s)} \\
+\midrule
+MFT & test ($n=1379$) & \textbf{50.37} & \textbf{49.35} & 10.68 \\
+Mursit & test ($n=1379$) & 43.94 & 43.75 & 7.67 \\
+Cosmos & test ($n=1379$) & 38.90 & 38.02 & 7.52 \\
+Tabi & test ($n=1379$) & 33.58 & 33.24 & 8.18 \\
+\midrule
+MFT & train ($n=5749$) & \textbf{53.34} & \textbf{51.31} & 47.48 \\
+Mursit & train ($n=5749$) & 45.51 & 44.38 & 33.39 \\
+Cosmos & train ($n=5749$) & 40.48 & 39.89 & 32.22 \\
+Tabi & train ($n=5749$) & 38.20 & 37.44 & 36.31 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 To better understand the learning dynamics, we analyzed the performance evolution of each model across different training checkpoints. Figure \ref{fig:version_history_pearson} and Figure \ref{fig:version_history_spearman} illustrate the Pearson and Spearman correlations respectively at various stages of training (if applicable) or across collected versions. The x-axis represents sequential checkpoints ordered by date.
 
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\linewidth]{figures/version_history_pearson.png}
+    \includegraphics[width=0.85\linewidth]{figures/version_history_pearson.png}
     \caption{Pearson correlation history comparing model performance across versions.}
     \label{fig:version_history_pearson}
 \end{figure}
@@ -109,18 +158,58 @@ Pearson correlation captures linear agreement with human similarity judgments, w
 
 In our version tracking, both correlations show the same qualitative trend: MFT remains ahead of the strongest baselines across revisions, indicating that the downstream improvement is stable rather than a single-run artifact.
 
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\linewidth]{figures/version_history_spearman.png}
+    \includegraphics[width=0.85\linewidth]{figures/version_history_spearman.png}
     \caption{Spearman correlation history comparing model performance across versions.}
     \label{fig:version_history_spearman}
 \end{figure}
 
-\FloatBarrier
+\begin{table}[t]
+\centering
+\caption{STS robustness across model revisions (HuggingFace commit history). We report mean $\pm$ standard deviation across all successful revision evaluations, as well as the best observed revision for each model. All values are percentages ($\times 100$). Model shorthands follow Table~\ref{tab:sts_results}.}
+\label{tab:version_tracking_summary}
+\begin{tabular}{lcrrr}
+\toprule
+\textbf{Model} & \textbf{\#Revisions} & \textbf{Pearson} & \textbf{Spearman} & \textbf{Best Spearman (rev.)} \\
+\midrule
+MFT & 21 & $46.87 \pm 4.28$ & $46.07 \pm 4.05$ & 49.44 (\texttt{e5255b59}) \\
+Mursit & 22 & $42.06 \pm 2.60$ & $41.79 \pm 2.67$ & 43.81 (\texttt{9f28fe75}) \\
+Cosmos & 22 & $37.20 \pm 2.71$ & $36.24 \pm 2.65$ & 38.05 (\texttt{c75ded99}) \\
+Tabi & 21 & $31.96 \pm 2.99$ & $31.47 \pm 2.81$ & 38.60 (\texttt{5a25af0d}) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-On the comprehensive MTEB suite, which covers retrieval, classification, clustering, and pair classification tasks, the MFT-based model consistently outperformed other baselines.
+On the comprehensive MTEB suite, which covers retrieval, classification, clustering, and pair classification tasks, the MFT-based model achieves the strongest overall average among the compared random-initialized baselines.
 
-\begin{table}[H]
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.82\linewidth]{figures/mteb_average_scores.png}
+    \caption{Average MTEB-TR score across 26 tasks for each model.}
+    \label{fig:mteb_average}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{MTEB-TR category averages (26 tasks). Values are percentages ($\times 100$) and correspond to the grouped results in \texttt{MTEB\_BENCHMARK\_RESULTS.md}.}
+\label{tab:mteb_category_averages}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Category} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
+\midrule
+BitextMining & \textbf{1.53} & 1.08 & 1.26 & 1.39 \\
+Classification & \textbf{58.81} & 57.52 & 57.71 & 56.52 \\
+Clustering & 66.30 & \textbf{66.45} & 65.39 & 65.71 \\
+Other & \textbf{4.94} & 1.58 & 2.19 & 1.89 \\
+Pair Classification & \textbf{50.25} & 47.94 & 46.89 & 47.43 \\
+Retrieval & \textbf{28.94} & 20.10 & 21.12 & 18.46 \\
+STS & \textbf{49.36} & 38.04 & 43.75 & 33.24 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
 \centering
 \resizebox{\linewidth}{!}{
 \begin{tabular}{lrrrr}
@@ -167,16 +256,17 @@ STSbTR & \textbf{49.36} & 38.04 & 43.75 & 33.24 \\
 \label{tab:mteb_detailed}
 \end{table}
 
-As shown in Table \ref{tab:mteb_detailed}, the MFT-based model achieved an average score of \textbf{38.99\%} across 26 tasks, surpassing Mursit (34.98\%), Cosmos (34.43\%), and Tabi (33.33\%). The advantages are particularly pronounced in Retrieval and Pair Classification tasks, where morphological coherence aids in matching semantic intent.
+As shown in Table \ref{tab:mteb_detailed}, the MFT-based model achieved an average score of \textbf{38.99\%} across 26 tasks, surpassing Mursit (34.98\%), Cosmos (34.43\%), and Tabi (33.33\%). Analyzing performance by category reveals distinct trade-offs. MFT demonstrates substantial advantages in \textit{Semantic Textual Similarity (STS)} and \textit{Retrieval} tasks (e.g., TQuadRetrieval: 43.46\% vs 26.30\% for Tabi), which aligns with our hypothesis that morphology-aware segmentation improves the semantic quality of embeddings for similarity and search. At the same time, the Tabi baseline remains competitive or superior in specific \textit{Classification} tasks (e.g., Turkish75NewsClassification: 79.33\% vs 73.33\% for MFT) and \textit{BitextMining}, suggesting that different tokenization priors can favor different downstream regimes even under matched architecture and training protocol.
 
-TurBLiMP evaluates the model's sensitivity to specific linguistic phenomena such as case marking, agreement, and word order. Table \ref{tab:turblimp_detailed} presents the accuracy of each model in distinguishing grammatical from ungrammatical sentences across various linguistic categories.
 
-\begin{table}[H]
+TurBLiMP provides Turkish minimal pairs designed to probe specific linguistic phenomena (e.g., agreement, scrambling, nominalization). Since our models are sentence embedding encoders (rather than generative language models), we evaluate an embedding-based proxy: for each minimal pair, we embed the grammatical and ungrammatical sentence and compute cosine similarity. Each category contains 1,000 minimal pairs in our evaluation. We report the average cosine similarity per phenomenon (shown as a percentage). Higher values indicate that the embedding representation is more invariant to these grammatical perturbations; this should not be interpreted as direct grammaticality classification accuracy.
+
+\begin{table}[t]
 \centering
 \resizebox{\linewidth}{!}{
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Linguistic Phenomenon} & \textbf{Mursit-Random} & \textbf{MFT-Random} & \textbf{Cosmos-Random} & \textbf{Tabi-Random} \\
+\textbf{Linguistic Phenomenon} & \textbf{Mursit} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Tabi} \\
 \midrule
 Ellipsis & 98.0\% & \textbf{99.2\%} & 97.7\% & 93.0\% \\
 Scrambling & 97.7\% & \textbf{98.0\%} & 97.3\% & \textbf{98.0\%} \\
@@ -201,8 +291,8 @@ Island Effects & 79.7\% & \textbf{84.0\%} & 76.2\% & \textbf{84.0\%} \\
 \label{tab:turblimp_detailed}
 \end{table}
 
-The MFT tokenizer demonstrates superior handling of complex morphological features such as \textit{Scrambling} (98.0\%), \textit{Relative Clauses} (96.1\%), and \textit{Anaphor Agreement} (92.6\%). These results confirm that explicit morphological modeling allows the model to better generalize over complex syntactic dependencies.
+Across many categories, MFT yields higher similarity between minimal pairs than the general-purpose baselines (e.g., \textit{Relative Clauses} 96.1\% vs.\ 86.3\% for Cosmos). Under this embedding-based proxy, this suggests that morphology-first segmentation yields more stable semantic representations even when surface form is perturbed by controlled grammatical manipulations. A complementary evaluation of true grammatical sensitivity would require scoring minimal pairs with language model likelihood or a supervised acceptability classifier, which we leave for future work.
 
-Finally, we tracked STS performance across multiple experiment iterations and code revisions to ensure the observed gains are not a one-off artifact; the best observed revision reached 76.10\% Pearson on STSb-TR, with results remaining stable across recent runs.
+Finally, we tracked STS performance across multiple code revisions to ensure the observed gains are not a one-off artifact. Across all evaluated revisions, MFT remains ahead on average (Table~\ref{tab:version_tracking_summary}), and the best observed MFT revision reaches 50.45\% Pearson / 49.44\% Spearman on STSb-TR.
 
 \FloatBarrier

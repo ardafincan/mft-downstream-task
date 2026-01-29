@@ -8,7 +8,6 @@ We tracked the performance of models across multiple code revisions to ensure st
 
 ## Key Findings
 
-- **Stability:** The top models (`mft-downstream-task-embeddingmagibu`) consistently score in the **75-76%** range on STS Pearson across multiple recent revisions.
 - **No Flukes:** The improvement over baselines is not a one-off random seed luck; it is sustained across iterations.
 - **Latest Best:** Revision `7d2932fe` achieved **76.10%** Pearson.
 

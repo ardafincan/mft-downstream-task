@@ -10,14 +10,10 @@ The training process (`train.py`, `embedding_trainer.py`) implements a knowledge
 
 ### Models Compared
 
-| Model Name               | Backbone             | Tokenizer    |
-| :----------------------- | :------------------- | :----------- |
-| **mft-embeddinggemma**   | embeddinggemma-300m  | MFT (Hybrid) |
-| **mft-embeddingmagibu**  | embeddingmagibu-200m | MFT (Hybrid) |
-| **mft-random-init**      | (Random Weights)     | MFT (Hybrid) |
-| **tabi-embeddinggemma**  | embeddinggemma-300m  | Tabi (BPE)   |
-| **tabi-embeddingmagibu** | embeddingmagibu-200m | Tabi (BPE)   |
-| **tabi-random-init**     | (Random Weights)     | Tabi (BPE)   |
+| Model Name           | Backbone         | Tokenizer    |
+| :------------------- | :--------------- | :----------- |
+| **mft-random-init**  | (Random Weights) | MFT (Hybrid) |
+| **tabi-random-init** | (Random Weights) | Tabi (BPE)   |
 
 _Note: `random-init` baselines serve as a sanity check to ensure the distillation process is actually learning better representations than chance/architecture priors._
 

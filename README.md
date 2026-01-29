@@ -23,16 +23,12 @@ Investigate whether morphologically-aware tokenization improves Turkish sentence
 
 All models use the same architecture with **131M parameters** (131,420,928 params with 32K vocab).
 
-| #   | Model                | HuggingFace ID                                   | Tokenizer | Initialization              | Parameters |
-| --- | -------------------- | ------------------------------------------------ | --------- | --------------------------- | ---------- |
-| 1   | mft-embeddinggemma   | `alibayram/mft-downstream-task-embeddinggemma`   | MFT       | Cloned from EmbeddingGemma  | 131M       |
-| 2   | mft-embeddingmagibu  | `alibayram/mft-downstream-task-embeddingmagibu`  | MFT       | Cloned from EmbeddingMagibu | 131M       |
-| 3   | tabi-embeddinggemma  | `alibayram/tabi-downstream-task-embeddinggemma`  | TabiBERT  | Cloned from EmbeddingGemma  | 131M       |
-| 4   | tabi-embeddingmagibu | `alibayram/tabi-downstream-task-embeddingmagibu` | TabiBERT  | Cloned from EmbeddingMagibu | 131M       |
-| 5   | mft-random-init      | `alibayram/mft-random-init`                      | MFT       | Random Xavier init          | 131M       |
-| 6   | tabi-random-init     | `alibayram/tabi-random-init`                     | TabiBERT  | Random Xavier init          | 131M       |
+| #   | Model            | HuggingFace ID               | Tokenizer | Initialization     | Parameters |
+| --- | ---------------- | ---------------------------- | --------- | ------------------ | ---------- |
+| 5   | mft-random-init  | `alibayram/mft-random-init`  | MFT       | Random Xavier init | 131M       |
+| 6   | tabi-random-init | `alibayram/tabi-random-init` | TabiBERT  | Random Xavier init | 131M       |
 
-> **Note:** Both EmbeddingGemma (originally 262K vocab → 300M params) and EmbeddingMagibu (originally 131K vocab → 200M params) are resized to 32K vocab, resulting in identical parameter counts. The extra ~5M params come from Dense projection layers in the SentenceTransformer.
+> **Note:** EmbeddingGemma (originally 262K vocab → 300M params) is resized to 32K vocab, resulting in identical parameter counts. The extra ~5M params come from Dense projection layers in the SentenceTransformer.
 
 ### 📂 Training Dataset
 
@@ -133,10 +129,6 @@ tr-tokenizer-train/
 ├── bpe_tokenler.json         # BPE fallback tokens
 ├── evaluate_sts_tr.py        # STS benchmark evaluation
 │
-├── mft_embeddinggemma_cloner.py      # Cloner scripts
-├── mft_embeddingmagibu_cloner.py
-├── tabi_embeddinggemma_cloner.py
-├── tabi_embeddingmagibu_cloner.py
 ├── random_init.py                    # Random init (both tokenizers, seed=42)
 │
 └── sentence_transformers/    # Modified library with custom_tokenizer support

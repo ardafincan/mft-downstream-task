@@ -4,8 +4,6 @@ Source: `papers/Adapting Pretrained Embedding Models to Turkish via Token Remapp
 
 ## What it is
 
-Presents a Turkish-focused sentence embedding model (embeddingmagibu) and an efficiency-oriented adaptation pipeline:
-
 1. Train a Turkish SentencePiece/BPE tokenizer (large vocab).
 2. Clone a teacher embedding model by mapping new tokens to teacher-token sequences and initializing embeddings by composition.
 3. Train with offline teacher-embedding alignment (cosine objective) to avoid online teacher inference.

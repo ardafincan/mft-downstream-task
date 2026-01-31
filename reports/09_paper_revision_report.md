@@ -21,7 +21,7 @@ Added a detailed description of the controlled downstream setup:
 - **Initialization control:** all models are random-initialized with a fixed seed (42).
 - **Training control:** all models are trained with the same embedding-distillation objective and hyperparameters; only tokenizer / `input_ids` differs.
 - **Data control:** training uses `alibayram/cosmos-corpus-0-05-with-embeddings` and the unified encoded dataset `alibayram/cosmos-corpus-encoded`, which stores token streams for all tokenizers.
-- **Length control:** strict max sequence length 2048; any sample exceeding the limit for *any* tokenizer is dropped to prevent truncation-based unfairness.
+- **Length control:** strict max sequence length 2048; any sample exceeding the limit for _any_ tokenizer is dropped to prevent truncation-based unfairness.
 - **Reproducibility note:** documented the “tokenizer bypass” approach used to train the custom Python tokenizer stream with the same trainer stack.
 
 New table:
@@ -55,10 +55,6 @@ Fixes/additions:
   - `version_eval_alibayram_tabi_random_init.json`
   - `version_eval_alibayram_cosmosGPT2_random_init.json`
   - `version_eval_alibayram_newmindaiMursit_random_init.json`
-
-New table:
-
-- `Table~\ref{tab:version_tracking_summary}`: mean±std across revisions and best observed Spearman+revision per model.
 
 ### 4) MTEB-TR: added category summary + average figure
 
@@ -116,4 +112,3 @@ To prevent page overflow after adding multiple new tables/figures:
 
 - Modified: `Tokens_with_Meaning__A_Hybrid_Tokenization_Approach_for_NLP/results_and_analysis.tex`
 - Added: `reports/09_paper_revision_report.md`
-

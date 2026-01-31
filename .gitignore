@@ -21,3 +21,4 @@ STS_BENCHMARK_RESULTS.pdf
 *.synctex.gz(busy)
 *.fdb_latexmk
 *.fls
+*.toc

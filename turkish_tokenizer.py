@@ -18,12 +18,25 @@ class TurkishTokenizer:
         package_dir = os.path.dirname(os.path.abspath(__file__))
 
         # Load JSON files from the package directory
-        with open(os.path.join(package_dir, "kokler.json"), "r", encoding="utf-8") as f:
+        with open(
+            os.path.join(
+                package_dir,
+                "mft_rust/src/resources/kokler.json",
+            ),
+            "r",
+            encoding="utf-8",
+        ) as f:
             roots = json.load(f)
-        with open(os.path.join(package_dir, "ekler.json"), "r", encoding="utf-8") as f:
+        with open(
+            os.path.join(package_dir, "mft_rust/src/resources/ekler.json"),
+            "r",
+            encoding="utf-8",
+        ) as f:
             suffixes = json.load(f)
         with open(
-            os.path.join(package_dir, "bpe_tokenler.json"), "r", encoding="utf-8"
+            os.path.join(package_dir, "mft_rust/src/resources/bpe_tokenler.json"),
+            "r",
+            encoding="utf-8",
         ) as f:
             bpe_tokens = json.load(f)
 
@@ -36,10 +49,18 @@ class TurkishTokenizer:
         self.vocab = self.get_vocab()
         self.reverse_dict = {}
 
-        for key, value in self.vocab.items():
-            if value not in self.reverse_dict:
-                self.reverse_dict[value] = []
-            self.reverse_dict[value].append(key)
+        # Helper to populate reverse dict
+        def add_to_reverse(source_dict):
+            for key, value in source_dict.items():
+                if value not in self.reverse_dict:
+                    self.reverse_dict[value] = []
+                # Avoid duplicates
+                if key not in self.reverse_dict[value]:
+                    self.reverse_dict[value].append(key)
+
+        add_to_reverse(self.roots)
+        add_to_reverse(self.suffixes)
+        add_to_reverse(self.bpe_tokens)
 
         self.decoder = TurkishDecoder(self.reverse_dict)
 
@@ -87,37 +108,89 @@ class TurkishTokenizer:
         for seg, orig_pos in segments:
             if orig_pos < len(word) and word[orig_pos].isupper():
                 result.append(self.uppercase_marker)
-                seg = " " + seg
 
-            s = seg
+                # Only prepend space if at start and not whitespace
+                should_add_space = orig_pos == 0 and not seg.isspace()
+
+                if should_add_space:
+                    seg = " " + seg
+
+            s = self._tr_lower(seg)
             pos = 0
 
             while pos < len(s):
                 substr = s[pos:]
 
-                rid, rtok = self._longest_prefix_lookup(
+                r_matches = self._all_prefix_matches(
                     substr, self.roots, self.max_root_len
                 )
-                if rid is not None:
-                    result.append({"token": rtok, "id": rid, "type": TokenType.ROOT})
-                    pos += len(rtok)
-                    continue
-
-                sid, stok = self._longest_prefix_lookup(
-                    substr, self.suffixes, self.max_suffix_len
-                )
-                if sid is not None:
-                    result.append({"token": stok, "id": sid, "type": TokenType.SUFFIX})
-                    pos += len(stok)
-                    continue
-
-                bid, btok = self._longest_prefix_lookup(
+                b_matches = self._all_prefix_matches(
                     substr, self.bpe_tokens, self.max_bpe_len
                 )
-                if bid is not None:
-                    result.append({"token": btok, "id": bid, "type": TokenType.BPE})
-                    pos += len(btok)
+                s_matches = self._all_prefix_matches(
+                    substr, self.suffixes, self.max_suffix_len
+                )
+
+                candidates = []
+                for r_id, r_tok in r_matches:
+                    candidates.append(("ROOT", r_tok, r_id, len(r_tok), TokenType.ROOT))
+                for b_id, b_tok in b_matches:
+                    candidates.append(("BPE", b_tok, b_id, len(b_tok), TokenType.BPE))
+                for s_id, s_tok in s_matches:
+                    candidates.append(
+                        ("SUFFIX", s_tok, s_id, len(s_tok), TokenType.SUFFIX)
+                    )
+
+                if not candidates:
+                    result.append(self.unknown_marker)
+                    pos += 1
                     continue
+
+                best_candidate = None
+                best_score = -1
+
+                for c_type, c_tok, c_id, c_len, c_enum in candidates:
+                    score = c_len
+                    remainder = substr[c_len:]
+
+                    if not remainder:
+                        # Full match bonus
+                        score += 5
+                    else:
+                        # Follow-up suffix bonus
+                        s_next_id, s_next_tok = self._longest_prefix_lookup(
+                            remainder, self.suffixes, self.max_suffix_len
+                        )
+                        if s_next_id is not None:
+                            # Ignore 1-char variants to prefer atomic roots (e.g. Kapı vs Kap+ı)
+                            if len(s_next_tok) > 1:
+                                score += len(s_next_tok)
+
+                    if score > best_score:
+                        best_score = score
+                        best_candidate = (c_tok, c_id, c_enum)
+                    elif score == best_score:
+                        # Tie-break Priority: Root > BPE > Suffix
+                        if (
+                            c_enum == TokenType.ROOT
+                            and best_candidate[2] != TokenType.ROOT
+                        ):
+                            best_candidate = (c_tok, c_id, c_enum)
+                        elif (
+                            c_enum == TokenType.BPE
+                            and best_candidate[2] == TokenType.SUFFIX
+                        ):
+                            best_candidate = (c_tok, c_id, c_enum)
+
+                result.append(
+                    {
+                        "token": best_candidate[0],
+                        "id": best_candidate[1],
+                        "type": best_candidate[2],
+                    }
+                )
+                pos += len(best_candidate[0])
+                continue
 
                 result.append(self.unknown_marker)
                 pos += 1
@@ -139,7 +212,8 @@ class TurkishTokenizer:
                 for i, token in enumerate(tokens):
 
                     if (
-                        not (0 <= token["id"] <= 19999)
+                        i >= 2
+                        and not (0 <= token["id"] <= 19999)
                         and tokens[i - 2] == self.uppercase_marker
                         and tokens[i - 1] == self.space_marker
                     ):
@@ -151,7 +225,14 @@ class TurkishTokenizer:
                         and len(cleaned_tokens) > 0
                         and cleaned_tokens[-1] == self.space_marker
                     ):
-                        cleaned_tokens.pop()  # remove the last " " before uppercase
+                        should_pop = False
+                        if i + 1 < len(tokens):
+                            next_tok_str = tokens[i + 1]["token"]
+                            if next_tok_str.startswith(" "):
+                                should_pop = True
+
+                        if should_pop:
+                            cleaned_tokens.pop()  # remove the last " " before uppercase
                     cleaned_tokens.append(token)
 
                 final_tokens.extend(cleaned_tokens)
@@ -175,6 +256,17 @@ class TurkishTokenizer:
             if cand in table:
                 return table[cand], cand
         return None, ""
+
+    def _all_prefix_matches(
+        self, s: str, table: Dict[str, int], max_len: int = None
+    ) -> List[Tuple[int, str]]:
+        matches = []
+        end = min(len(s), max_len) if max_len else len(s)
+        for i in range(end, 0, -1):
+            prefix = s[:i]
+            if prefix in table:
+                matches.append((table[prefix], prefix))
+        return matches
 
     def _tr_lower(self, word: str) -> str:
         if "I" in word or "İ" in word:

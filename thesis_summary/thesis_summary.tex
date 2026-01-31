@@ -1,0 +1,468 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{float}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{placeins}
+
+% Title
+\title{\textbf{Tokens with Meaning: A Hybrid Tokenization Approach for Turkish}\\[0.5em]
+\large Summary for PhD Thesis}
+\author{Ali Bayram}
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document provides a comprehensive summary of the paper "Tokens with Meaning: A Hybrid Tokenization Approach for Turkish," which proposes MFT (Morphology-First Tokenizer), a linguistically informed hybrid tokenizer for Turkish. The tokenizer combines dictionary-driven root/affix segmentation with phonological normalization and a BPE fallback, achieving 90.29\% Turkish Token Percentage and 85.80\% Pure Token Percentage on TR-MMLU dataset. Controlled downstream experiments with sentence embedding models show that MFT provides substantial gains: +16.8 percentage points on STSb-TR and +5.7 points on MTEB-TR compared to baseline BPE tokenizers.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%=============================================================================
+\section{Introduction and Motivation}
+%=============================================================================
+
+Tokenization is the process of mapping raw text into a sequence of discrete units (tokens) that a model can embed and process. While subword tokenization methods such as Byte Pair Encoding (BPE), WordPiece, and Unigram have become standard for transformer-based models, their behavior is not neutral for morphologically rich languages.
+
+\subsection{The Turkish Language Challenge}
+
+Turkish exhibits rich suffix morphology and systematic morphophonological alternations:
+
+\begin{itemize}
+    \item \textbf{Vowel harmony:} Suffix allomorphs such as \textit{-lAr} (plural) and \textit{-dAn/-tAn} (ablative) realize the same grammatical morpheme under different phonological contexts
+    \item \textbf{Consonant alternations:} Forms like \textit{kitap} $\rightarrow$ \textit{kitabı} (p$\rightarrow$b before a vowel) create predictable surface variants
+    \item \textbf{Agglutinative structure:} A single word like \textit{kitaplarımızdan} ("from our books") contains the root \textit{kitap} plus four suffixes
+\end{itemize}
+
+Standard BPE tokenizers treat these variants as unrelated units, inflating vocabulary redundancy and reducing semantic coherence.
+
+\subsection{Research Contributions}
+
+This work makes three main contributions:
+\begin{enumerate}
+    \item A \textbf{morphology-first hybrid tokenizer} for Turkish with an explicit decoder for lossless reconstruction
+    \item \textbf{Quantitative tokenization quality evaluation} on TR-MMLU against widely used tokenizers
+    \item \textbf{Controlled downstream comparisons} across four matched embedding models to assess whether improved morpheme alignment translates into better sentence representations
+\end{enumerate}
+
+%=============================================================================
+\section{Methodology}
+%=============================================================================
+
+\subsection{Tokenizer Architecture}
+
+MFT follows a three-stage pipeline: preprocessing, morphology-first dictionary lookup, and subword fallback.
+
+\subsubsection{Dictionary Construction}
+
+The vocabulary consists of three components:
+
+\begin{table}[H]
+\centering
+\caption{MFT vocabulary composition.}
+\label{tab:vocab}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Component} & \textbf{Entries} & \textbf{Token IDs} & \textbf{ID Range} \\
+\midrule
+Roots & 22,231 & 20,000 & 0--19,999 \\
+Suffixes & 177 forms & 72 & 20,000--20,071 \\
+BPE tokens & 12,696 & 12,696 & 20,072--32,767 \\
+\midrule
+\textbf{Total} & --- & \textbf{32,768} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Root Dictionary:} The root dictionary comprises approximately 22,000 roots extracted from large-scale Turkish corpora. Surface variants map to a single canonical root ID through phonological normalization.
+
+\textbf{Affix Dictionary:} 177 suffix surface forms are consolidated into 72 abstract affix IDs. Allomorphs serving identical grammatical functions share IDs (e.g., \textit{-ler/-lar} $\rightarrow$ \textsc{PL}).
+
+\textbf{BPE Fallback:} 12,696 BPE tokens handle out-of-vocabulary terms and foreign words.
+
+\subsubsection{Encoding Algorithm}
+
+The encoder uses Trie-based data structures for O(n) prefix matching. For each position, it finds all prefix matches in three tries (roots, suffixes, BPE) and selects the best match using a priority-weighted scoring system.
+
+\begin{algorithm}[H]
+\caption{MFT Encoding Algorithm}
+\label{alg:encoding}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Raw text string $S$
+\State \textbf{Output:} Sequence of Token IDs $T$
+\State Build Tries: $\mathcal{T}_\text{roots}$, $\mathcal{T}_\text{suffixes}$, $\mathcal{T}_\text{bpe}$
+\For{each word $w$ in $S.\text{split}(\text{` '})$}
+    \If{$w[0]$ is uppercase}
+        \State $T.\text{append}(\text{ID}_\text{uppercase})$
+        \State $w \gets \text{TurkishLowercase}(w)$ \Comment{İ$\to$i, I$\to$ı}
+    \EndIf
+    \State $w \gets \text{` '} + w$ \Comment{Prepend space for word boundary}
+    \State $pos \gets 0$
+    \While{$pos < |w|$}
+        \State $\text{substr} \gets w[pos:]$
+        \State $R \gets \mathcal{T}_\text{roots}.\text{FindAllPrefixes}(\text{substr})$ \Comment{$\{(id, len, chars)\}$}
+        \State $B \gets \mathcal{T}_\text{bpe}.\text{FindAllPrefixes}(\text{substr})$
+        \State $S \gets \mathcal{T}_\text{suffixes}.\text{FindAllPrefixes}(\text{substr})$
+        \State $\text{best} \gets \text{SelectBest}(R, B, S, \text{substr})$ \Comment{Priority: roots > bpe > suffix}
+        \State $T.\text{append}(\text{best}.id)$
+        \State $pos \gets pos + \text{best}.len$
+    \EndWhile
+\EndFor
+\State \textbf{Return} $T$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Priority Scoring:} For each candidate match, the score is computed as $\text{chars} \times 10$. Additionally, BPE and suffix matches receive a lookahead bonus if the remainder starts with a valid suffix ($\geq 2$ chars). Among equal scores, priority favors: roots (0) $>$ BPE (1) $>$ suffixes (2).
+
+\subsubsection{Decoding Algorithm}
+
+The decoder reconstructs surface forms by applying Turkish phonological rules based on context. Each suffix ID maps to multiple allomorphic surface forms, and the decoder selects the appropriate variant.
+
+\begin{algorithm}[H]
+\caption{MFT Decoding Algorithm}
+\label{alg:decoding}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Sequence of Token IDs $T$
+\State \textbf{Output:} Reconstructed text string $S$
+\State $\text{parts} \gets []$
+\State $i \gets 0$
+\While{$i < |T|$}
+    \State $id \gets T[i]$
+    \If{$id = \text{ID}_\text{uppercase}$}
+        \State $\text{next} \gets \text{ReverseLookup}(T[i+1])$
+        \State $\text{parts}.\text{append}(\text{TurkishCapitalize}(\text{next}))$ \Comment{i$\to$İ, ı$\to$I}
+        \State $i \gets i + 2$; \textbf{continue}
+    \EndIf
+    \State $\text{candidates} \gets \text{ReverseLookup}(id)$ \Comment{List of surface forms}
+    \If{$|\text{candidates}| > 1$}
+        \If{$id \in [20000, 20071]$} \Comment{Suffix range}
+            \State $\text{ctx} \gets \text{GetVowelContext}(\text{parts})$ \Comment{Look back for vowel}
+            \State $\text{surface} \gets \text{SelectSuffix}(id, \text{ctx}, T, i)$
+        \Else \Comment{Root with alternations}
+            \State $\text{surface} \gets \text{SelectRoot}(id, T, i)$
+        \EndIf
+    \Else
+        \State $\text{surface} \gets \text{candidates}[0]$
+    \EndIf
+    \State $\text{parts}.\text{append}(\text{surface})$
+    \State $i \gets i + 1$
+\EndWhile
+\State \textbf{Return} $\text{parts}.\text{join}(\text{``''})$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Phonological Rules Applied:}
+\begin{itemize}
+    \item \textbf{Vowel harmony:} Suffix vowels selected based on last vowel of context (front/back: e,i,ö,ü vs a,ı,o,u)
+    \item \textbf{Consonant assimilation:} $d \to t$ after voiceless consonants (f,s,t,k,ç,ş,h,p)
+    \item \textbf{Vowel narrowing:} $e \to i$ before progressive suffix -yor (e.g., \textit{de} $\to$ \textit{diyor})
+    \item \textbf{Consonant softening:} $p \to b$, $k \to ğ$ before vowel-initial suffixes (e.g., \textit{kitap} $\to$ \textit{kitabı})
+    \item \textbf{Buffer consonants:} y/n inserted between vowels (e.g., \textit{okuma} + ACC $\to$ \textit{okumayı})
+\end{itemize}
+
+\subsubsection{Roundtrip Reconstruction Accuracy}
+
+Word-level roundtrip accuracy on 500 randomly sampled words: \textbf{99.2\% exact-match accuracy} (496/500 words). The 0.8\% failures arise from inherent phonological ambiguity in Turkish where multiple surface realizations are linguistically valid.
+
+\subsection{Tokenization Efficiency}
+
+\begin{table}[H]
+\centering
+\caption{Tokenization efficiency comparison (1,000 texts, 653K words).}
+\label{tab:efficiency}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Tokenizer} & \textbf{Time (ms)} & \textbf{Tokens} & \textbf{Tok/Word} & \textbf{Tok/Char} \\
+\midrule
+MFT & 1,935 & 1,899,670 & \textbf{2.91} & 0.356 \\
+Tabi & 1,544 & 1,298,725 & 1.99 & 0.244 \\
+Mursit & 1,655 & 1,187,418 & 1.82 & 0.223 \\
+Cosmos & 1,620 & 1,186,834 & 1.82 & 0.223 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+MFT produces approximately 1.5$\times$ more tokens because it segments at morpheme boundaries rather than optimizing for compression. This trade-off yields improved downstream performance.
+
+%=============================================================================
+\section{Tokenization Quality Evaluation}
+%=============================================================================
+
+\subsection{Evaluation Metrics}
+
+Following the protocol of Bayram et al. (2025), we evaluate tokenization quality using:
+
+\begin{itemize}
+    \item \textbf{Turkish Token Percentage (TR\%):} Proportion of tokens corresponding to valid Turkish words or morphemes
+    \item \textbf{Pure Token Percentage (Pure\%):} Proportion of tokens fully aligned with unambiguous root/affix boundaries
+\end{itemize}
+
+TR\% and Pure\% are computed using an independent morphological validator with curated lexical resources external to the tokenizer under evaluation.
+
+\subsection{TR-MMLU Benchmark Results}
+
+\begin{table}[H]
+\centering
+\caption{Performance on TR-MMLU dataset.}
+\label{tab:trmmlu}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Metric} & \textbf{Value} \\ \hline
+Vocabulary Size & 32,768 \\ \hline
+Total Token Count & 707,727 \\ \hline
+Processing Time (s) & 0.6714 \\ \hline
+Unique Token Count & 11,144 \\ \hline
+Turkish Token Count & 10,062 \\ \hline
+Turkish Token Percentage (TR\%) & \textbf{90.29\%} \\ \hline
+Pure Token Count & 9,562 \\ \hline
+Pure Token Percentage (Pure\%) & \textbf{85.80\%} \\ \hline
+\end{tabular}
+\end{table}
+
+The proposed tokenizer substantially outperforms all competing tokenizers:
+\begin{itemize}
+    \item \texttt{google/gemma-2-9b}: TR\% = 40.96\%, Pure\% = 28.49\%
+    \item \texttt{meta-llama/Llama-3.2-3B}: TR\% = 45.77\%, Pure\% = 31.45\%
+    \item \texttt{CohereForAI/aya-expanse-8b}: TR\% = 53.48\%
+\end{itemize}
+
+%=============================================================================
+\section{Downstream Task Evaluation}
+%=============================================================================
+
+\subsection{Experimental Setup}
+
+To isolate the effect of tokenization from pre-training data, we conduct controlled experiments with randomly initialized models:
+
+\begin{table}[H]
+\centering
+\caption{Embedding distillation experiment setup.}
+\label{tab:setup}
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+Student architecture & \texttt{google/embeddinggemma-300m} \\
+Initialization & Random weights with fixed seed 42 \\
+Vocabulary size & 32,768 (matched across all models) \\
+Teacher model & \texttt{intfloat/multilingual-e5-large-instruct} \\
+Training objective & Cosine embedding loss \\
+Context length & 2,048 tokens \\
+Batch size / LR & 256 / $5 \times 10^{-5}$ \\
+Schedule & Two-phase: 100-step warmup + 1 epoch \\
+Hardware & NVIDIA H100 80GB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Four models are compared: MFT, Tabi, Mursit, and Cosmos---all using independently trained BPE tokenizers with matched vocabulary sizes.
+
+\subsection{Semantic Textual Similarity (STSb-TR)}
+
+\begin{table}[H]
+\centering
+\caption{STS benchmark correlations.}
+\label{tab:sts}
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Model} & \textbf{Split} & \textbf{Pearson} & \textbf{Spearman} & \textbf{Time (s)} \\
+\midrule
+MFT & test ($n=1379$) & \textbf{50.37} & \textbf{49.35} & 10.68 \\
+Mursit & test ($n=1379$) & 43.94 & 43.75 & 7.67 \\
+Cosmos & test ($n=1379$) & 38.90 & 38.02 & 7.52 \\
+Tabi & test ($n=1379$) & 33.58 & 33.24 & 8.18 \\
+\midrule
+\multicolumn{2}{l}{\textbf{MFT Advantage over Tabi}} & \textbf{+16.79} & \textbf{+16.11} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{figures/sts_benchmark_chart_test.png}
+    \caption{STS benchmark test split performance comparison.}
+    \label{fig:sts}
+\end{figure}
+
+\subsection{MTEB-TR Benchmark}
+
+\begin{table}[H]
+\centering
+\caption{MTEB-TR category averages.}
+\label{tab:mteb_cat}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Category} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
+\midrule
+BitextMining & \textbf{1.53} & 1.08 & 1.26 & 1.39 \\
+Classification & \textbf{58.81} & 57.52 & 57.71 & 56.52 \\
+Clustering & 66.30 & \textbf{66.45} & 65.39 & 65.71 \\
+Other & \textbf{4.94} & 1.58 & 2.19 & 1.89 \\
+Pair Classification & \textbf{50.25} & 47.94 & 46.89 & 47.43 \\
+Retrieval & \textbf{28.94} & 20.10 & 21.12 & 18.46 \\
+STS & \textbf{49.36} & 38.04 & 43.75 & 33.24 \\
+\midrule
+\textbf{Overall Average} & \textbf{38.99} & 34.43 & 34.98 & 33.33 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{figures/mteb_average_scores.png}
+    \caption{Average MTEB-TR scores across all tasks.}
+    \label{fig:mteb}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Detailed MTEB-TR task-level performance (selected tasks).}
+\label{tab:mteb_detail}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Task} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
+\midrule
+TurkishNewsCategoryClassification & \textbf{85.40} & 83.32 & 80.52 & 79.08 \\
+TurkishProductSentimentClassification & \textbf{54.34} & 51.39 & 51.85 & 52.10 \\
+QuoraRetrievalTR & \textbf{63.01} & 46.44 & 49.24 & 46.98 \\
+TQuadRetrieval & \textbf{43.46} & 29.97 & 29.48 & 26.30 \\
+MSMarcoTRRetrieval & \textbf{12.84} & 6.07 & 6.13 & 4.83 \\
+STSbTR & \textbf{49.36} & 38.04 & 43.75 & 33.24 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+MFT demonstrates substantial advantages in \textit{STS} and \textit{Retrieval} tasks, supporting the hypothesis that morphology-aware segmentation improves semantic embedding quality.
+
+\subsection{TurBLiMP Linguistic Evaluation}
+
+\begin{table}[H]
+\centering
+\caption{TurBLiMP sensitivity scores by linguistic phenomenon.}
+\label{tab:turblimp}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Linguistic Phenomenon} & \textbf{Mursit} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Tabi} \\
+\midrule
+Ellipsis & 98.0\% & \textbf{99.2\%} & 97.7\% & 93.0\% \\
+Scrambling & 97.7\% & \textbf{98.0\%} & 97.3\% & \textbf{98.0\%} \\
+Determiners & 94.9\% & \textbf{96.5\%} & 93.4\% & 94.1\% \\
+Relative Clauses & 89.1\% & \textbf{96.1\%} & 86.3\% & 93.0\% \\
+Suspended Affixation & 89.5\% & \textbf{93.4\%} & 83.2\% & 91.0\% \\
+Subject Verb Agreement & 84.8\% & \textbf{89.5\%} & 79.7\% & 86.3\% \\
+Island Effects & 79.7\% & \textbf{84.0\%} & 76.2\% & \textbf{84.0\%} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+MFT yields higher similarity between minimal pairs across most linguistic phenomena, suggesting that morphology-first segmentation produces more stable semantic representations.
+
+\subsection{Training Stability}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/version_history_pearson.png}
+    \caption{Pearson correlation across model revisions.}
+    \label{fig:pearson}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/version_history_spearman.png}
+    \caption{Spearman correlation across model revisions.}
+    \label{fig:spearman}
+\end{figure}
+
+All three baseline tokenizers (Mursit, Cosmos, Tabi)---which are independently trained BPE tokenizers from different research groups---show consistent relative ordering across all benchmarks. This cross-tokenizer consistency provides strong evidence that performance differences reflect genuine tokenizer-induced inductive bias rather than random initialization variance.
+
+%=============================================================================
+\section{Discussion and Analysis}
+%=============================================================================
+
+\subsection{Why Morphology-First Tokenization Works}
+
+The substantial downstream gains (+16.8 pp on STS) can be attributed to several factors:
+
+\begin{enumerate}
+    \item \textbf{Semantic coherence:} Each token represents a meaningful linguistic unit (root or affix) rather than an arbitrary subword
+    \item \textbf{Embedding reuse:} Phonologically normalized representations allow the same root embedding to be shared across surface variants
+    \item \textbf{Grammatical compositionality:} Explicit affix tokens enable the model to learn compositional semantics of Turkish morphology
+\end{enumerate}
+
+\subsection{Token Count Trade-off}
+
+MFT produces 2.91 tokens per word compared to 1.99 for baseline BPE tokenizers. While this increases sequence length by approximately 46\%, the morpheme-aligned representations yield improved sample efficiency during training:
+
+\begin{itemize}
+    \item \textbf{STSb-TR:} +16.8 percentage points improvement
+    \item \textbf{MTEB-TR Retrieval:} +10.5 percentage points improvement
+    \item \textbf{TurBLiMP Relative Clauses:} +9.8 percentage points improvement
+\end{itemize}
+
+The trade-off favors semantic quality over sequence efficiency.
+
+\subsection{Model Architecture Compatibility}
+
+The 99.2\% roundtrip reconstruction accuracy enables MFT to be used across all transformer architectures:
+\begin{itemize}
+    \item \textbf{Encoder-only models} (BERT-style): Exact reconstruction not required
+    \item \textbf{Encoder-decoder models} (translation, summarization): Near-lossless encoding
+    \item \textbf{Decoder-only models} (GPT-style generation): 99.2\% ensures correct outputs
+\end{itemize}
+
+%=============================================================================
+\section{Conclusion}
+%=============================================================================
+
+This work presented MFT, a linguistically informed morphology-first hybrid tokenizer for Turkish. Key findings:
+
+\begin{enumerate}
+    \item \textbf{Tokenization quality:} 90.29\% TR\% and 85.80\% Pure\% on TR-MMLU, substantially exceeding general-purpose tokenizers
+    \item \textbf{Semantic similarity:} +16.79 percentage points on STSb-TR compared to Tabi baseline
+    \item \textbf{Retrieval tasks:} +10.5 percentage points on MTEB-TR Retrieval average
+    \item \textbf{Reconstruction:} 99.2\% word-level roundtrip accuracy
+\end{enumerate}
+
+These results demonstrate that morphology-first tokenization provides a stronger inductive bias for learning Turkish semantic representations from scratch, validating the motivation that linguistically informed tokenization is essential for morphologically rich languages.
+
+%=============================================================================
+\section*{Key Figures and Tables Summary}
+%=============================================================================
+
+\begin{table}[H]
+\centering
+\caption{Summary of all experimental results.}
+\begin{tabular}{llrr}
+\toprule
+\textbf{Benchmark} & \textbf{Metric} & \textbf{MFT} & \textbf{Best Baseline} \\
+\midrule
+TR-MMLU & TR\% & 90.29\% & 53.48\% (Aya) \\
+TR-MMLU & Pure\% & 85.80\% & 31.45\% (LLaMA) \\
+STSb-TR & Pearson & 50.37\% & 43.94\% (Mursit) \\
+STSb-TR & Spearman & 49.35\% & 43.75\% (Mursit) \\
+MTEB-TR & Average & 38.99\% & 34.98\% (Mursit) \\
+MTEB-TR & Retrieval Avg & 28.94\% & 21.12\% (Mursit) \\
+Roundtrip & Exact Match & 99.2\% & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

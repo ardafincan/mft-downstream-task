@@ -31,6 +31,25 @@ impl PyTurkishTokenizer {
     fn decode(&self, ids: Vec<i32>) -> String {
         self.inner.decode(ids)
     }
+
+    fn tokenize_text(&self, text: &str, py: Python<'_>) -> PyResult<Vec<PyObject>> {
+        let tokens = self.inner.tokenize_text(text);
+        let mut results = Vec::with_capacity(tokens.len());
+        
+        for token in tokens {
+             let dict = pyo3::types::PyDict::new(py);
+             dict.set_item("token", token.token)?;
+             dict.set_item("id", token.id)?;
+             let type_str = match token.token_type {
+                 crate::tokenizer::TokenType::ROOT => "ROOT",
+                 crate::tokenizer::TokenType::SUFFIX => "SUFFIX",
+                 crate::tokenizer::TokenType::BPE => "BPE",
+             };
+             dict.set_item("type", type_str)?;
+             results.push(dict.into());
+        }
+        Ok(results)
+    }
 }
 
 #[pymodule]

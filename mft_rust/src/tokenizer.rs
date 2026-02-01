@@ -107,6 +107,7 @@ pub struct TurkishTokenizer {
     suffixes_trie: Trie,
     bpe_trie: Trie,
     reverse_dict: AHashMap<i32, Vec<String>>,
+    token_types: AHashMap<i32, TokenType>,
     decoder: TurkishDecoder,
     
     // Special tokens
@@ -144,16 +145,19 @@ impl TurkishTokenizer {
             bpe_trie.insert(k, v);
         }
 
-        // Build reverse dict with AHashMap
+        // Build reverse dict with AHashMap and token types
         let mut reverse_dict: AHashMap<i32, Vec<String>> = AHashMap::new();
-        let mut insert_rev = |map: &IndexMap<String, i32>| {
+        let mut token_types: AHashMap<i32, TokenType> = AHashMap::new();
+
+        let mut insert_rev = |map: &IndexMap<String, i32>, t_type: TokenType| {
             for (k, &v) in map {
                 reverse_dict.entry(v).or_default().push(k.clone());
+                token_types.insert(v, t_type);
             }
         };
-        insert_rev(&roots);
-        insert_rev(&suffixes);
-        insert_rev(&bpe_tokens);
+        insert_rev(&roots, TokenType::ROOT);
+        insert_rev(&suffixes, TokenType::SUFFIX);
+        insert_rev(&bpe_tokens, TokenType::BPE);
         
         // Convert to std HashMap for decoder
         let std_reverse: std::collections::HashMap<i32, Vec<String>> = 
@@ -171,6 +175,7 @@ impl TurkishTokenizer {
             suffixes_trie,
             bpe_trie,
             reverse_dict,
+            token_types,
             decoder,
             uppercase_id,
             unknown_id,
@@ -238,7 +243,7 @@ impl TurkishTokenizer {
                 }
             }
             
-            // Score BPEs (priority 1)
+            // Score BPEs (priority 2 - was 1)
             for &(id, byte_len, char_count) in b_matches.iter() {
                 let mut score = char_count;
                 
@@ -254,15 +259,15 @@ impl TurkishTokenizer {
                     }
                 }
                 
-                if score > best_score || (score == best_score && 1 < best_priority) {
+                if score > best_score || (score == best_score && 2 < best_priority) {
                     best_score = score;
-                    best_priority = 1;
+                    best_priority = 2;
                     best_byte_len = byte_len;
                     best_id = id;
                 }
             }
             
-            // Score Suffixes (priority 2)
+            // Score Suffixes (priority 1 - was 2)
             for &(id, byte_len, char_count) in s_matches.iter() {
                 let mut score = char_count;
                 
@@ -278,9 +283,10 @@ impl TurkishTokenizer {
                     }
                 }
                 
-                if score > best_score || (score == best_score && 2 < best_priority) {
+                // Priority 1 is BETTER than 2, so we check if 1 < best_priority
+                if score > best_score || (score == best_score && 1 < best_priority) {
                     best_score = score;
-                    best_priority = 2;
+                    best_priority = 1;
                     best_byte_len = byte_len;
                     best_id = id;
                 }
@@ -444,7 +450,6 @@ impl TurkishTokenizer {
         final_ids
     }
 
-#[allow(dead_code)]
 pub fn tokenize_text(&self, text: &str) -> Vec<Token> {
         let ids = self.encode(text);
         ids.iter().map(|&id| {
@@ -454,12 +459,18 @@ pub fn tokenize_text(&self, text: &str) -> Vec<Token> {
                 format!("<id:{}>", id)
             };
             
-            let token_type = if id < 20000 {
-                TokenType::ROOT
-            } else if id <= 20071 {
-                TokenType::SUFFIX
+            let token_type = if let Some(&t_type) = self.token_types.get(&id) {
+                t_type
             } else {
-                TokenType::BPE
+                 if id == self.uppercase_id {
+                     TokenType::ROOT // Uppercase marker
+                 } else if id <= 20071 && id >= 20000 {
+                     TokenType::SUFFIX // Fallback for suffix range if missing
+                 } else if id < 20000 {
+                     TokenType::ROOT // Fallback
+                 } else {
+                     TokenType::BPE // Fallback
+                 }
             };
             
             Token { token: token_str, id, token_type }

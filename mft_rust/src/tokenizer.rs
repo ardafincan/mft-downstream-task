@@ -219,7 +219,19 @@ impl TurkishTokenizer {
             
             // Score Roots (priority 0 - highest)
             for &(id, byte_len, char_count) in r_matches.iter() {
-                let score = char_count * 10;
+                let mut score = char_count;
+                if byte_len == substr.len() {
+                    score += 5; // Full match bonus
+                } else {
+                    // Suffix lookahead bonus
+                    let remainder = &substr[byte_len..];
+                    if let Some((_, _, next_char_count)) = self.suffixes_trie.find_longest_prefix_info(remainder) {
+                         if next_char_count >= 2 {
+                             score += next_char_count;
+                         }
+                    }
+                }
+
                 if score > best_score || (score == best_score && 0 < best_priority) {
                     best_score = score;
                     best_priority = 0;
@@ -228,12 +240,14 @@ impl TurkishTokenizer {
                 }
             }
             
-            // Score BPEs (priority 1) with suffix lookahead
+            // Score BPEs (priority 1)
             for &(id, byte_len, char_count) in b_matches.iter() {
-                let mut score = char_count * 10;
+                let mut score = char_count;
                 
-                // Suffix lookahead bonus
-                if byte_len < substr.len() {
+                if byte_len == substr.len() {
+                    score += 5; // Full match bonus
+                } else {
+                    // Suffix lookahead bonus
                     let remainder = &substr[byte_len..];
                     if let Some((_, _, next_char_count)) = self.suffixes_trie.find_longest_prefix_info(remainder) {
                         if next_char_count >= 2 {
@@ -250,12 +264,14 @@ impl TurkishTokenizer {
                 }
             }
             
-            // Score Suffixes (priority 2) with suffix lookahead
+            // Score Suffixes (priority 2)
             for &(id, byte_len, char_count) in s_matches.iter() {
-                let mut score = char_count * 10;
+                let mut score = char_count;
                 
-                // Suffix lookahead bonus
-                if byte_len < substr.len() {
+                if byte_len == substr.len() {
+                    score += 5; // Full match bonus
+                } else {
+                     // Suffix lookahead bonus
                     let remainder = &substr[byte_len..];
                     if let Some((_, _, next_char_count)) = self.suffixes_trie.find_longest_prefix_info(remainder) {
                         if next_char_count >= 2 {
@@ -288,6 +304,7 @@ impl TurkishTokenizer {
     }
     
     /// Fast encode with minimal allocations
+    /// Fast encode with minimal allocations
     pub fn encode(&self, text: &str) -> Vec<i32> {
         let estimated_tokens = text.len() / 4;
         let mut all_ids: SmallVec<[i32; 64]> = SmallVec::with_capacity(estimated_tokens.min(64));
@@ -300,87 +317,96 @@ impl TurkishTokenizer {
             if part_trimmed.is_empty() {
                 continue;
             }
+
+            // CamelCase splitting logic matching Python's _camel_split_with_positions
+            let char_indices: Vec<(usize, char)> = part_trimmed.char_indices().collect();
+            let count = char_indices.len();
             
-            // Build lowercased version with leading space
-            lower_buf.clear();
-            lower_buf.push(' ');
+            // Collect segments: (text, starts_upper)
+            let mut segments = SmallVec::<[(String, bool); 4]>::new();
+            let mut start_idx = 0;
             
-            let mut has_uppercase = false;
-            let mut first_char_uppercase = false;
-            let mut first_char_pos = 0;
-            
-            for (i, c) in part_trimmed.char_indices() {
-                let is_upper = c.is_uppercase();
-                if is_upper {
-                    if i == 0 {
-                        first_char_uppercase = true;
-                        first_char_pos = lower_buf.len();
-                    } else {
-                        has_uppercase = true;
+            for i in 1..count {
+                let (_, c) = char_indices[i];
+                if c.is_uppercase() {
+                    let (byte_start, c_start) = char_indices[start_idx];
+                    let (byte_end, _) = char_indices[i];
+                    
+                    let segment_text = &part_trimmed[byte_start..byte_end];
+                    let mut lower = String::with_capacity(segment_text.len());
+                    for ch in segment_text.chars() { 
+                        lower.push(Self::tr_lower_char(ch)); 
                     }
+                    
+                    segments.push((lower, c_start.is_uppercase()));
+                    start_idx = i;
                 }
-                lower_buf.push(Self::tr_lower_char(c));
             }
             
-            if !has_uppercase {
-                // Simple case - no internal uppercase
-                if first_char_uppercase {
+            // Last segment
+            if start_idx < count {
+                let (byte_start, c_start) = char_indices[start_idx];
+                let segment_text = &part_trimmed[byte_start..];
+                let mut lower = String::with_capacity(segment_text.len());
+                for ch in segment_text.chars() { 
+                    lower.push(Self::tr_lower_char(ch)); 
+                }
+                segments.push((lower, c_start.is_uppercase()));
+            }
+
+            // Process segments
+            for (idx, (seg, starts_upper)) in segments.into_iter().enumerate() {
+                if starts_upper {
                     all_ids.push(self.uppercase_id);
                 }
-                self.tokenize_segment_fast(&lower_buf, &mut all_ids);
-            } else {
-                // Complex case - handle CamelCase
-                // For now, fall back to a simpler approach
-                if first_char_uppercase {
-                    all_ids.push(self.uppercase_id);
+                
+                lower_buf.clear();
+                // Add space only for FIRST segment
+                if idx == 0 {
+                    lower_buf.push(' ');
                 }
-                
-                let mut last_was_upper = first_char_uppercase;
-                let mut segment_start = 1; // Skip leading space
-                
-                for (i, c) in lower_buf[1..].char_indices() {
-                    let orig_idx = i;
-                    let orig_c = part_trimmed.chars().nth(orig_idx);
-                    
-                    if let Some(oc) = orig_c {
-                        if oc.is_uppercase() && !last_was_upper && i > 0 {
-                            // New uppercase segment - tokenize previous
-                            let segment = &lower_buf[segment_start..i+1];
-                            self.tokenize_segment_fast(segment, &mut all_ids);
-                            all_ids.push(self.uppercase_id);
-                            segment_start = i + 1;
-                        }
-                        last_was_upper = oc.is_uppercase();
-                    }
-                }
-                
-                // Tokenize remaining
-                if segment_start < lower_buf.len() {
-                    let segment = &lower_buf[segment_start..];
-                    if !segment.is_empty() {
-                        self.tokenize_segment_fast(segment, &mut all_ids);
-                    }
+                lower_buf.push_str(&seg);
+                if !lower_buf.is_empty() {
+                    self.tokenize_segment_fast(&lower_buf, &mut all_ids);
                 }
             }
         }
         
-        // Space removal for uppercase tokens
+        // Space removal cleaning logic (matching Python tokenize_text)
         let mut final_ids: Vec<i32> = Vec::with_capacity(all_ids.len());
         
         for i in 0..all_ids.len() {
             let id = all_ids[i];
             
+            // Logic 1: Remove space between Uppercase and Suffix (token > 19999)
+            // Python: not (0<=id<=19999) and prev==Uppercase and prevprev==Space
+            if id > 19999 {
+                if final_ids.len() >= 2 {
+                    let last = final_ids[final_ids.len()-1];
+                    let second_last = final_ids[final_ids.len()-2];
+                    if last == self.space_id && second_last == self.uppercase_id {
+                        final_ids.pop(); 
+                    }
+                }
+            }
+            
+            // Logic 2: Remove space before Uppercase if next token starts with space
             if id == self.uppercase_id && !final_ids.is_empty() {
                 if let Some(&last_id) = final_ids.last() {
-                    if last_id == self.space_id && i + 1 < all_ids.len() {
-                        if let Some(strs) = self.reverse_dict.get(&all_ids[i+1]) {
-                            if !strs.is_empty() && strs[0].starts_with(' ') {
-                                final_ids.pop();
+                    if last_id == self.space_id {
+                        // Check lookahead at i+1
+                        if i + 1 < all_ids.len() {
+                            let next_id = all_ids[i+1];
+                            if let Some(strs) = self.reverse_dict.get(&next_id) {
+                                if !strs.is_empty() && strs[0].starts_with(' ') {
+                                    final_ids.pop();
+                                }
                             }
                         }
                     }
                 }
             }
+            
             final_ids.push(id);
         }
         

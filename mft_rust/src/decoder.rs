@@ -223,29 +223,42 @@ impl TurkishDecoder {
         
         let next_token = &self.reverse_dict[&ids[i + 1]][0];
         
-        if token_id == 204 { // "hayat"
+        // === EXCEPTIONS: Roots that should NOT soften ===
+        // 204 (hayat), 220 (belirt), 298 (meslek)
+        if token_id == 204 || token_id == 220 || token_id == 298 {
              return tokens[0].clone();
         }
 
-        // Meslek Exception (298) - Don't soften to mesleğ
-        if token_id == 298 {
-             return tokens[0].clone();
+        // Special case: üçlü (2227) - always return üçlü (variant 1) unless specific context
+        if token_id == 2227 {
+             if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); }
         }
 
-        // Akış (aka/akı) Exception (2199)
+        // Akış (aka/akı) Exception (2199) - Default to "akı" (variant 1) 
         if token_id == 2199 {
             if i < ids.len() - 1 {
                  let next_id = ids[i+1];
-                 // 32681 = 'cı'
-                 // 20080 = 'ş'
-                 if next_id == 20080 || next_id == 20100 || next_id == 32681 {
-                      return tokens[1].clone();
-                 }
                  let next_str = &self.reverse_dict[&next_id][0];
-                 if next_str.starts_with('ş') || next_str.starts_with('ı') {
-                      return tokens[1].clone();
+                 // Use "aka" only when followed by vowel-starting suffixes like "acak"
+                 if next_str.starts_with('a') || next_str.starts_with('e') {
+                      return tokens[0].clone(); // "aka" for "akacak"
                  }
             }
+            // Default to "akı"
+            if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); }
+        }
+
+        // Ata/Atı Exception (2212) - for "atılırsa", "atılmak", "atıyorlar" etc.
+        // Use "atı" (variant 1) when followed by 'l' (passive) or 'y' (yor, yacak)
+        if token_id == 2212 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                 let next_id = ids[i+1];
+                 let next_str = &self.reverse_dict[&next_id][0];
+                 if next_str.trim().starts_with('l') || next_str.trim().starts_with('y') {
+                      return tokens[1].clone(); // "atı" + "lırsa" = "atılırsa"
+                 }
+            }
+            return tokens[0].clone(); // "ata" by default
         }
         
         // Yaşına (yaşa/yaşı) Exception (2209)
@@ -253,25 +266,137 @@ impl TurkishDecoder {
              if i < ids.len() - 1 {
                  // 20188 = 'na'
                  if ids[i+1] == 20188 {
-                      return tokens[1].clone();
+                      if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); }
                  }
              }
+             return tokens[0].clone();
         }
         
-        // Alın (alın/aln) Exception (182)
-        // Default logic drops vowel (100-2080). We want to KEEP vowel 0 for 'ır', 'an'
+        // Alın (alın/aln) Exception (182) - Default to "alın" (variant 0)
         if token_id == 182 {
              if i < ids.len() - 1 {
                  let next_id = ids[i+1];
-                 let next_str = &self.reverse_dict[&next_id][0];
-                 // If suffix is ır, an, ılan... keep 'alın'
-                 // 20085 = 'ır', 20012 = 'an' (or other variants)
-                 // Check encoded strings for robustness
-                 if next_str.starts_with("ır") || next_str.starts_with("an") || next_str == "nan" {
-                      return tokens[0].clone();
+                 // Only drop vowel for simple possessive suffixes (ı, i, u, ü)
+                 if next_id == 20034 || next_id == 20033 || next_id == 20035 || next_id == 20036 {
+                      if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); }
                  }
-                 // If standard possessive 'ı', let it drop
              }
+             return tokens[0].clone();
+        }
+
+        // Ilim/Ilm Exception (166) - Default to "ilim" (variant 0)
+        if token_id == 166 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                let next_id = ids[i+1];
+                // Only use "ilm" for possessive/buffer case (ilmi, ilme) id 20033 ('i'), 20038 ('e')
+                if next_id == 20033 || next_id == 20038 {
+                     return tokens[1].clone(); // "ilm" + i = "ilmi"
+                }
+            }
+            return tokens[0].clone(); // Default to "ilim"
+        }
+
+        // Boya/Boyu Exception (2220) - "boya" (paint) vs "boyu" (height)
+        // Use "boyu" (variant 1) by default
+        if token_id == 2220 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                let next_id = ids[i+1];
+                let next_str = &self.reverse_dict[&next_id][0];
+                // Use "boya" only when followed by actual suffix tokens starting with 'n', 'm', 'l', 'd'
+                if next_id >= 20000 && !next_str.trim().is_empty() {
+                    let first_char = next_str.trim().chars().next().unwrap();
+                    if "nmld".contains(first_char) {
+                        return tokens[0].clone(); // "boya"
+                    }
+                }
+            }
+            if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); } // "boyu" by default
+        }
+
+        // Bile/Bili Exception (2307) - for "bilir", "biliyor" vs "biler"
+        if token_id == 2307 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                let next_str = &self.reverse_dict[&ids[i+1]][0];
+                if next_str.trim().starts_with('r') || next_str.trim() == "yor" {
+                    return tokens[1].clone(); // "bili" + "r" = "bilir"
+                }
+            }
+            return tokens[0].clone(); // Default to "bile"
+        }
+        
+        // Ada/Adı Exception (2218) - Default to "adı" (variant 1)
+        if token_id == 2218 {
+            if i < ids.len() - 1 {
+                 let next_id = ids[i+1];
+                 let next_str = &self.reverse_dict[&next_id][0];
+                 // Use "ada" when followed by 'n' suffixes or 'yı' (for adayı pattern) or 'ma' (adama)
+                 // 20017 = suffix yı, 32725 = BPE yı, 20002 = ma/me, 32763 = BPE ma
+                 if next_id == 20040 || next_str.starts_with('n') || next_id == 20017 || next_id == 32725 || next_id == 20002 || next_id == 32763 {
+                      return tokens[0].clone(); // "ada" for "adanın", "adayı", "adama"
+                 }
+            }
+            // Default to "adı" for most cases
+            if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); }
+        }
+
+        // Kap/Kab Exception (336) - favor "kapı" (door) over "kab" (container) context
+        if token_id == 336 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                let next_str = &self.reverse_dict[&ids[i+1]][0];
+                // If followed by vowel (which causes softening default), check if it looks like possessive plural
+                if next_str.trim().starts_with(|c: char| "aeıioöuüAEIİOÖUÜ".contains(c)) {
+                    return tokens[0].clone(); // Keep "kap"
+                }
+            }
+            return tokens[0].clone(); // Default "kap"
+        }
+        
+        // Emekli/Emekle Exception (2295) - Default to "emekli" (variant 1)
+        if token_id == 2295 {
+            if i < ids.len() - 1 {
+                 let next_id = ids[i+1];
+                 // 20041 = 'yor' - for "emekliyor" use base form
+                 if next_id == 20041 {
+                      return tokens[0].clone(); // "emekle" + yor = emekliyor
+                 }
+            }
+            // Default to "emekli" 
+            if tokens.len() > 1 { return tokens[1].clone(); } else { return tokens[0].clone(); }
+        }
+        
+        // Tutuk/Tutuğ/Tutk Exception (107) - for "tutkun"
+        if token_id == 107 {
+            if tokens.len() > 2 && i < ids.len() - 1 {
+                 let next_str = &self.reverse_dict[&ids[i+1]][0];
+                 // Check if next token starts with 'u' (un, unlar, etc.)
+                 if next_str.trim().starts_with('u') {
+                      return tokens[2].clone(); // "tutk" + "un" = "tutkun"
+                 }
+            }
+            return tokens[0].clone();
+        }
+        
+        // Başla/Başlı Exception (2206) - for "başlıca"
+        if token_id == 2206 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                 let next_id = ids[i+1];
+                 // 20005 = 'ça/çe' suffix, 20047 = 'ce', 20207 = BPE 'ca'
+                 if next_id == 20005 || next_id == 20047 || next_id == 20207 {
+                      return tokens[1].clone(); // "başlı" + "ca" = "başlıca"
+                 }
+            }
+            // Continue to existing logic below
+        }
+        
+        // Dip/Dib Exception (2406) - soften to "dib" before vowel suffixes
+        if token_id == 2406 {
+            if tokens.len() > 1 && i < ids.len() - 1 {
+                let next_str = &self.reverse_dict[&ids[i+1]][0];
+                if next_str.trim().starts_with(|c: char| "aeıioöuüAEIİOÖUÜ".contains(c)) {
+                    return tokens[1].clone(); // "dib" + "inde" = "dibinde"
+                }
+            }
+            return tokens[0].clone(); // "dip" by default
         }
         
         // de (19531) / ye (19968) / başla (2206) narrowing logic

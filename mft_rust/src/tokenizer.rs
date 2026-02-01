@@ -292,8 +292,10 @@ impl TurkishTokenizer {
                 // No match found - emit unknown and skip one char
                 result.push(self.unknown_id);
                 if let Some(c) = substr.chars().next() { 
-                    pos_byte += c.len_utf8(); 
-                } else { 
+                    pos_byte += c.len_utf8();
+                    // If no progress possible (EOS or weird char), break to avoid infinite loop
+                    if pos_byte >= substr.len() { break; } 
+                } else {
                     break; 
                 }
             } else {
@@ -312,38 +314,42 @@ impl TurkishTokenizer {
         // Reusable buffer for lowercased text
         let mut lower_buf = String::with_capacity(64);
         
-        for part in text.split(' ') {
-            let part_trimmed = part.trim();
-            if part_trimmed.is_empty() {
-                continue;
-            }
+        let parts: Vec<&str> = text.split_whitespace().collect();
+        let num_parts = parts.len();
 
-            // CamelCase splitting logic matching Python's _camel_split_with_positions
+        for (i, part) in parts.iter().enumerate() {
+            let part_trimmed: &str = part; 
+            
+            // CamelCase splitting logic matching Python's _camel_split_with_positions EXACTLY
+            // Python: split on ANY uppercase char at i > 0
             let char_indices: Vec<(usize, char)> = part_trimmed.char_indices().collect();
             let count = char_indices.len();
             
-            // Collect segments: (text, starts_upper)
-            let mut segments = SmallVec::<[(String, bool); 4]>::new();
             let mut start_idx = 0;
-            
+            let mut segments = Vec::new();
+
             for i in 1..count {
                 let (_, c) = char_indices[i];
                 if c.is_uppercase() {
-                    let (byte_start, c_start) = char_indices[start_idx];
-                    let (byte_end, _) = char_indices[i];
-                    
-                    let segment_text = &part_trimmed[byte_start..byte_end];
-                    let mut lower = String::with_capacity(segment_text.len());
-                    for ch in segment_text.chars() { 
-                        lower.push(Self::tr_lower_char(ch)); 
-                    }
-                    
-                    segments.push((lower, c_start.is_uppercase()));
-                    start_idx = i;
+                     let (byte_start, c_start) = char_indices[start_idx];
+                     let (byte_end, _) = char_indices[i];
+                     let segment_text = &part_trimmed[byte_start..byte_end];
+                     let mut lower = String::with_capacity(segment_text.len());
+                     for ch in segment_text.chars() { 
+                         lower.push(Self::tr_lower_char(ch)); 
+                     }
+                     // Check if c_start is uppercase. 
+                     // In Python loop, start is updated. The segment is word[start:i].
+                     // Python's _tr_lower handles capitalization.
+                     // IMPORTANT: We need to know if the segment SHOULD have Upper marker.
+                     // In Python: NO special check for segment casing, BUT segments are formed from original text.
+                     // The `starts_upper` flag in our Rust code expects us to tell it.
+                     // If original segment started with Uppercase, we pass true.
+                     segments.push((lower, c_start.is_uppercase()));
+                     start_idx = i;
                 }
             }
             
-            // Last segment
             if start_idx < count {
                 let (byte_start, c_start) = char_indices[start_idx];
                 let segment_text = &part_trimmed[byte_start..];
@@ -356,19 +362,47 @@ impl TurkishTokenizer {
 
             // Process segments
             for (idx, (seg, starts_upper)) in segments.into_iter().enumerate() {
-                if starts_upper {
-                    all_ids.push(self.uppercase_id);
-                }
-                
-                lower_buf.clear();
-                // Add space only for FIRST segment
-                if idx == 0 {
-                    lower_buf.push(' ');
-                }
-                lower_buf.push_str(&seg);
-                if !lower_buf.is_empty() {
-                    self.tokenize_segment_fast(&lower_buf, &mut all_ids);
-                }
+                 let mut temp_ids: SmallVec<[i32; 64]> = SmallVec::new();
+                 
+                 lower_buf.clear();
+                 if idx == 0 {
+                     lower_buf.push(' ');
+                 }
+                 lower_buf.push_str(&seg);
+                 
+                 if !lower_buf.is_empty() {
+                     self.tokenize_segment_fast(&lower_buf, &mut temp_ids);
+                 }
+                 
+                 if idx == 0 {
+                     // Handle Space Absorption Logic for First Segment
+                     if !temp_ids.is_empty() {
+                         if temp_ids[0] == self.space_id {
+                             // Space was tokenized separately (e.g. " " + "Instagram")
+                             all_ids.push(self.space_id);
+                             if starts_upper {
+                                 all_ids.push(self.uppercase_id);
+                             }
+                             // Append the rest
+                             for k in 1..temp_ids.len() {
+                                 all_ids.push(temp_ids[k]);
+                             }
+                         } else {
+                             // Space was absorbed (e.g. " tetkik")
+                             if starts_upper {
+                                 all_ids.push(self.uppercase_id);
+                             }
+                             // Append all (including the absorbed space token)
+                             all_ids.extend(temp_ids);
+                         }
+                     }
+                 } else {
+                     // Subsequent segments (No leading space prepended)
+                     if starts_upper {
+                         all_ids.push(self.uppercase_id);
+                     }
+                     all_ids.extend(temp_ids);
+                 }
             }
         }
         

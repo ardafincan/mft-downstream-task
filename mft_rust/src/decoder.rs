@@ -444,25 +444,35 @@ impl TurkishDecoder {
              return tokens[0].clone();
         }
         
+        // Range 100-2080: Generic Softening
         if token_id >= 100 && token_id < 2080 {
-            if self.starts_with_vowel(next_token) {
-                 tokens[1].clone()
-            } else if token_id <= 110 && ids[i + 1] == 20034 { // ı token
-                 tokens[2].clone()
-            } else {
-                 tokens[0].clone()
-            }
-        } else if token_id >= 2080 && token_id < 2315 {
-             if ids[i + 1] == 20041 { // yor
-                 tokens[1].clone()
-             } else {
-                 tokens[0].clone()
+             // Skip if NO_SOFTENING_ROOTS (already handled) or EXCEPTION_ROOTS
+             
+             if i < ids.len() - 1 {
+                 let next_token = &self.reverse_dict[&ids[i + 1]][0];
+                 if self.starts_with_vowel(next_token) {
+                     return tokens[1].clone();
+                 } else if token_id <= 110 && next_token.trim() == "ı" {
+                     if tokens.len() > 2 { return tokens[2].clone(); }
+                 }
              }
-        } else {
-             tokens[0].clone()
+             return tokens[0].clone();
         }
-    }
 
+        // Range 2080-2315: Narrowing (e.g. verbs like demek/yemek other than de/ye)
+        if token_id >= 2080 && token_id < 2315 {
+             if i < ids.len() - 1 {
+                 let next_token = &self.reverse_dict[&ids[i + 1]][0];
+                 if next_token.contains("yor") {
+                     return tokens[1].clone();
+                 }
+                 // Python Check: else return variant 0
+             }
+             return tokens[0].clone();
+        }
+        
+        tokens[0].clone()
+    }
     // Capitalize token with proper Turkish I handling
     fn capitalize_token(token: &str) -> String {
         if token.starts_with(' ') {
@@ -510,8 +520,29 @@ impl TurkishDecoder {
             let token_id = ids[i];
             
             if token_id == 0 && i < ids.len() - 1 { // uppercase
-                let next_token = &self.reverse_dict[&ids[i + 1]][0];
-                text_parts.push(Self::capitalize_token(next_token));
+                // We must process the next token with full logic (softening/vowel drop)
+                // before capitalizing it.
+                // Determine if next is root or suffix to call correct method.
+                let next_id = ids[i + 1];
+                let resolved_token = if next_id < 20000 {
+                     self.select_correct_root(i + 1, &ids)
+                } else if next_id <= 20071 {
+                     // Suffix context logic duplication or refactor?
+                     // Python select_correct_root handles roots. 
+                     // Only roots typically start a word/Sentence.
+                     // But if Uppercase is applied to a suffix (unlikely but possible), 
+                     // Python only calls select_correct_root in line 436.
+                     self.select_correct_root(i + 1, &ids) 
+                } else {
+                     // BPE or other
+                     if let Some(tokens) = self.reverse_dict.get(&next_id) {
+                         tokens[0].clone()
+                     } else {
+                         String::new()
+                     }
+                };
+                
+                text_parts.push(Self::capitalize_token(&resolved_token));
                 i += 2;
                 continue;
             } else if token_id == 1 { // unknown

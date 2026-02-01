@@ -190,8 +190,8 @@ impl TurkishDecoder {
         } else if token_id == 20023 { // la, le
              let mut end_of_word = true;
              if i < ids.len() - 1 {
-                 let next_token = &self.reverse_dict[&ids[i + 1]][0];
-                 if !WHITESPACE.contains(next_token.chars().next().unwrap_or(' ')) {
+                 let _next_token = &self.reverse_dict[&ids[i + 1]][0];
+                 if !WHITESPACE.contains(_next_token.chars().next().unwrap_or(' ')) {
                      end_of_word = false;
                  }
              }
@@ -221,7 +221,7 @@ impl TurkishDecoder {
             return tokens[0].clone();
         }
         
-        let next_token = &self.reverse_dict[&ids[i + 1]][0];
+        let _next_token = &self.reverse_dict[&ids[i + 1]][0];
         
         // === EXCEPTIONS: Roots that should NOT soften ===
         // 204 (hayat), 220 (belirt), 298 (meslek)
@@ -478,7 +478,7 @@ impl TurkishDecoder {
         if token.starts_with(' ') {
              // Preserve leading space
              let mut chars = token.chars();
-             let first = chars.next().unwrap(); // ' '
+             let _first = chars.next().unwrap(); // ' '
              
              // Find first non-space
              let rest = chars.as_str();
@@ -551,39 +551,37 @@ impl TurkishDecoder {
                 if tokens.len() > 1 {
                     if token_id >= 20000 && token_id <= 20071 { // suffix
                          // Context construction (looking back up to 3 tokens)
-                         let mut prev_token_str = String::new();
+                         let mut vowel_context_str = String::new();
+                         let mut found_vowel = false;
+
+                         // 1. Check immediate previous tokens for simple vowel presence
                          let mut j = (text_parts.len() as isize) - 1;
                          let mut tokens_checked = 0;
-
-                         // Look back for last alphabetic part
-                         let mut k = j;
-                         while k >= 0 && tokens_checked < 3 {
-                             let idx = k as usize;
-                             if text_parts[idx].chars().any(|c| c.is_alphabetic()) {
-                                 prev_token_str = text_parts[idx].clone();
-                                 break;
+                         
+                         while j >= 0 && tokens_checked < 3 {
+                             let prev = &text_parts[j as usize];
+                             
+                             if !prev.trim().is_empty() {
+                                 // Found a non-empty token. Does it have a vowel?
+                                 if Self::has_vowel(prev) {
+                                     vowel_context_str = prev.clone();
+                                     found_vowel = true;
+                                     break; // Found it!
+                                 }
+                                 tokens_checked += 1;
                              }
-                             k -= 1;
+                             j -= 1;
                          }
 
-                         // Look back for vowel context
-                         let mut vowel_context_str = prev_token_str.clone();
-                         k = j;
-                         tokens_checked = 0;
-                         
-                         // Accumulate context until we have a vowel
-                         let mut found_vowel = Self::has_vowel(&vowel_context_str);
-                         
-                         // If the immediate prev token has no vowel, go deeper
+                         // 2. If no vowel found in single tokens, look deeper by concatenating (depth 3)
                          if !found_vowel {
                              let mut depth = 0;
                              let mut temp_ctx = String::new();
-                             
                              let mut m = (text_parts.len() as isize) - 1;
+                             
                              while m >= 0 && depth < 3 {
-                                 let idx = m as usize;
-                                 let part = &text_parts[idx];
-                                 temp_ctx = part.clone() + &temp_ctx;
+                                 let prev = &text_parts[m as usize];
+                                 temp_ctx = prev.clone() + &temp_ctx; // Prepend
                                  if Self::has_vowel(&temp_ctx) {
                                      vowel_context_str = temp_ctx;
                                      break;

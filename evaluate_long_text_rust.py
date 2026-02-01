@@ -1,4 +1,4 @@
-from turk_mft import TurkishTokenizer
+from turkish_tokenizer import TurkishTokenizer
 from datasets import load_dataset
 import difflib
 

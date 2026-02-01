@@ -34,7 +34,7 @@ impl PyTurkishTokenizer {
 }
 
 #[pymodule]
-fn turk_mft(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn turkish_tokenizer(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyTurkishTokenizer>()?;
     Ok(())
 }

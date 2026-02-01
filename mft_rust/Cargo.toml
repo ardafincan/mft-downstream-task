@@ -1,11 +1,11 @@
 [package]
-name = "turk_mft"
-version = "0.1.0"
+name = "turkish_tokenizer"
+version = "1.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "turk_mft"
+name = "turkish_tokenizer"
 crate-type = ["cdylib"]
 
 [dependencies]

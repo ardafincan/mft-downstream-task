@@ -4,6 +4,7 @@ use indexmap::IndexMap;
 use crate::decoder::TurkishDecoder;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum TokenType {
     ROOT,
     SUFFIX,
@@ -11,6 +12,7 @@ pub enum TokenType {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Token {
     pub token: String,
     pub id: i32,
@@ -65,14 +67,12 @@ impl Trie {
         // Returns (id, byte_len, char_count)
         let mut matches = SmallVec::new();
         let mut node = &self.root;
-        let mut byte_pos = 0;
 
         for (i, c) in s.char_indices() {
             if let Some(child) = node.get_child(c) {
                 node = child;
-                byte_pos = i + c.len_utf8();
                 if let Some((id, char_count)) = node.value {
-                    matches.push((id, byte_pos, char_count));
+                    matches.push((id, i + c.len_utf8(), char_count));
                 }
             } else {
                 break;
@@ -87,14 +87,12 @@ impl Trie {
     fn find_longest_prefix_info(&self, s: &str) -> Option<(i32, usize, usize)> {
         let mut node = &self.root;
         let mut last_match: Option<(i32, usize, usize)> = None;
-        let mut byte_pos = 0;
-
         for (i, c) in s.char_indices() {
             if let Some(child) = node.get_child(c) {
                 node = child;
-                byte_pos = i + c.len_utf8();
+                // byte_pos not needed unless verified outside
                 if let Some((id, char_count)) = node.value {
-                    last_match = Some((id, byte_pos, char_count));
+                    last_match = Some((id, i + c.len_utf8(), char_count));
                 }
             } else {
                 break;
@@ -315,9 +313,8 @@ impl TurkishTokenizer {
         let mut lower_buf = String::with_capacity(64);
         
         let parts: Vec<&str> = text.split_whitespace().collect();
-        let num_parts = parts.len();
-
-        for (i, part) in parts.iter().enumerate() {
+        
+        for (_i, part) in parts.iter().enumerate() {
             let part_trimmed: &str = part; 
             
             // CamelCase splitting logic matching Python's _camel_split_with_positions EXACTLY
@@ -447,7 +444,8 @@ impl TurkishTokenizer {
         final_ids
     }
 
-    pub fn tokenize_text(&self, text: &str) -> Vec<Token> {
+#[allow(dead_code)]
+pub fn tokenize_text(&self, text: &str) -> Vec<Token> {
         let ids = self.encode(text);
         ids.iter().map(|&id| {
             let token_str = if let Some(strs) = self.reverse_dict.get(&id) {

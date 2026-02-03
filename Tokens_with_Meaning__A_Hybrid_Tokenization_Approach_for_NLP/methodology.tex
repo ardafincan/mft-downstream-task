@@ -1,7 +1,7 @@
 \section{Methodology}
 \label{sec:methodology}
 
-We propose a hybrid tokenization framework that combines linguistic knowledge with statistical subword segmentation. This approach, the \textit{Morphology-First Tokenizer} (MFT), integrates rule-based morphological analysis with a structured dictionary of roots and affixes while incorporating BPE to handle out-of-vocabulary (OOV) terms. The objective is to create a tokenization system that accurate represents linguistic structures while maintaining computational efficiency.
+We propose a hybrid tokenization framework that combines linguistic knowledge with statistical subword segmentation. This approach, TurkishTokenizer, integrates rule-based morphological analysis with a structured dictionary of roots and affixes while incorporating BPE to handle out-of-vocabulary (OOV) terms. The objective is to create a tokenization system that accurate represents linguistic structures while maintaining computational efficiency.
 
 \begin{figure}[H]
 \centering
@@ -48,13 +48,13 @@ We propose a hybrid tokenization framework that combines linguistic knowledge wi
 
 \end{tikzpicture}%
 }
-\caption{Algorithmic flow of the MFT tokenization pipeline.}
+\caption{Algorithmic flow of TurkishTokenizer tokenization pipeline.}
 \label{fig:flowchart}
 \end{figure}
 
 We provide a Python reference implementation of the tokenizer and release the lexical resources (root and affix inventories) and decoder rules used in our experiments.
 
-\textbf{Dictionary Construction.} The core of MFT is a dual-dictionary system designed to cover the productive morphology of Turkish.
+\textbf{Dictionary Construction.} The core of TurkishTokenizer is a dual-dictionary system designed to cover the productive morphology of Turkish.
 
 \textbf{Root Dictionary.} The root dictionary is constructed from high-frequency words extracted from large-scale Turkish corpora, comprising approximately 22,000 roots. To address the challenge of phonological alternation, we employ a normalization strategy where surface variants map to a single canonical root ID. For example, consonant alternation causes \textit{kitap} (book) and \textit{kitabı} (its book) to share the same root ID despite the $p \to b$ softening; vowel hiatus maps \textit{oyna} (play) and \textit{oynuyor} (playing, where `a' drops) to a unified token; and haplology treats \textit{alın} (forehead) and \textit{alnı} (his forehead) identically. We also explicitly tokenize frequent compound words (e.g., \textit{akarsu} `stream', \textit{çamaşırhane} `laundromat') as single units to prevent erroneous splitting.
 
@@ -65,7 +65,7 @@ We provide a Python reference implementation of the tokenizer and release the le
 \textbf{Encoding Algorithm.} The encoding process (Algorithm \ref{alg:encoding}) follows a ``longest-prefix match'' strategy. For each word, the tokenizer first attempts to identify a valid root from the dictionary. If a root is found, it greedily matches the longest chain of valid suffixes.
 
 \begin{algorithm}
-\caption{Morphology-First Tokenization Pipeline}
+\caption{TurkishTokenizer Tokenization Pipeline}
 \label{alg:encoding}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Raw text string $S$
@@ -106,10 +106,10 @@ If the morphological analyzer fails to cover the word (i.e., no valid root+suffi
 
 Here, the tokenizer correctly identifies the root \textit{kalk} (stand) and segments the complex nominalization chain \textit{-tık-ımız-da} (represented by phonologically normalized abstract suffixes).
 
-\textbf{Decoding Algorithm.} Decoding in MFT is non-trivial compared to standard subword tokenizers. Simple concatenation is insufficient due to the normalization of affixes. The decoder (Algorithm~\ref{alg:decoding}) applies phonological rules to reconstruct the correct surface form by selecting the appropriate allomorphic variant for each suffix based on context.
+\textbf{Decoding Algorithm.} Decoding in TurkishTokenizer is non-trivial compared to standard subword tokenizers. Simple concatenation is insufficient due to the normalization of affixes. The decoder (Algorithm~\ref{alg:decoding}) applies phonological rules to reconstruct the correct surface form by selecting the appropriate allomorphic variant for each suffix based on context.
 
 \begin{algorithm}[H]
-\caption{MFT Decoding Pipeline}
+\caption{TurkishTokenizer Decoding Pipeline}
 \label{alg:decoding}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Sequence of Token IDs $T$
@@ -153,9 +153,9 @@ In this example, the abstract accusative suffix (represented as \textsc{ACC} in 
 
 \textbf{Roundtrip Reconstruction Evaluation.} To validate the reconstruction property of the decoder, we evaluate word-level roundtrip accuracy on 66,547 words from the Cosmos corpus. Given an input word $w$, we compute $\hat{w} = \text{decode}(\text{encode}(w))$ and measure exact-match accuracy. The decoder achieves \textbf{99.48\% exact-match accuracy} (66,200/66,547 words). The remaining 0.52\% failures arise from inherent ambiguity in Turkish phonology: vowel alternation patterns in complex verb forms (e.g., \textit{tetkiki} $\to$ \textit{tetkiği}) where multiple surface realizations are linguistically valid for the same morpheme sequence. This is not a limitation of the tokenizer but rather reflects the intrinsic many-to-one mapping in Turkish morphophonology, where the same abstract morpheme can surface differently depending on context.
 
-Crucially, this near-lossless reconstruction property enables MFT to be used across all transformer architectures: \textbf{encoder-only models} (e.g., BERT-style embeddings), \textbf{encoder-decoder models} (e.g., translation, summarization), and \textbf{decoder-only models} (e.g., GPT-style generation). For encoder-only tasks, exact reconstruction is not required since the model operates on embeddings rather than regenerating text. For generative tasks, the 99.48\% accuracy ensures that the vast majority of outputs are orthographically correct, with the rare exceptions being phonologically valid Turkish variants.
+Crucially, this near-lossless reconstruction property enables TurkishTokenizer to be used across all transformer architectures: \textbf{encoder-only models} (e.g., BERT-style embeddings), \textbf{encoder-decoder models} (e.g., translation, summarization), and \textbf{decoder-only models} (e.g., GPT-style generation). For encoder-only tasks, exact reconstruction is not required since the model operates on embeddings rather than regenerating text. For generative tasks, the 99.48\% accuracy ensures that the vast majority of outputs are orthographically correct, with the rare exceptions being phonologically valid Turkish variants.
 
-\textbf{Tokenization Efficiency.} We benchmark tokenization speed and token density on 1,000 Turkish text samples from our corpus. Table~\ref{tab:tokenization_efficiency} compares MFT against three Turkish-trained baseline tokenizers under matched vocabulary size (32,768).
+\textbf{Tokenization Efficiency.} We benchmark tokenization speed and token density on 1,000 Turkish text samples from our corpus. Table~\ref{tab:tokenization_efficiency} compares TurkishTokenizer against three Turkish-trained baseline tokenizers under matched vocabulary size (32,768).
 
 \begin{table}[H]
 \centering
@@ -165,7 +165,7 @@ Crucially, this near-lossless reconstruction property enables MFT to be used acr
 \toprule
 \textbf{Tokenizer} & \textbf{Time (ms)} & \textbf{Tokens} & \textbf{Tok/Word} & \textbf{Tok/Char} \\
 \midrule
-MFT & 1,935 & 1,899,670 & \textbf{2.91} & 0.356 \\
+TurkishTokenizer & 1,935 & 1,899,670 & \textbf{2.91} & 0.356 \\
 Tabi & 1,544 & 1,298,725 & 1.99 & 0.244 \\
 Mursit & 1,655 & 1,187,418 & 1.82 & 0.223 \\
 Cosmos & 1,620 & 1,186,834 & 1.82 & 0.223 \\
@@ -173,5 +173,5 @@ Cosmos & 1,620 & 1,186,834 & 1.82 & 0.223 \\
 \end{tabular}
 \end{table}
 
-MFT produces approximately 1.5$\times$ more tokens than BPE-based baselines because it segments at morpheme boundaries (e.g., \textit{kitaplarımızdan} $\to$ 4 tokens: \textit{kitap + lar + ımız + dan}) rather than optimizing for compression. While this increases sequence length, the morpheme-aligned representations yield improved downstream performance: +16.8~pp on STSb-TR correlation and +7.8~pp on retrieval tasks compared to the strongest baseline. The trade-off favors semantic quality over sequence efficiency—consistent with our hypothesis that morphological alignment improves sample efficiency during embedding training.
+TurkishTokenizer produces approximately 1.5$\times$ more tokens than BPE-based baselines because it segments at morpheme boundaries (e.g., \textit{kitaplarımızdan} $\to$ 4 tokens: \textit{kitap + lar + ımız + dan}) rather than optimizing for compression. While this increases sequence length, the morpheme-aligned representations yield improved downstream performance: +16.8~pp on STSb-TR correlation and +7.8~pp on retrieval tasks compared to the strongest baseline. The trade-off favors semantic quality over sequence efficiency—consistent with our hypothesis that morphological alignment improves sample efficiency during embedding training.
 

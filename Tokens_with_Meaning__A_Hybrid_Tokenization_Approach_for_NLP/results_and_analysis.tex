@@ -3,11 +3,11 @@
 
 The performance of the proposed morphological tokenizer was evaluated using the TR-MMLU benchmark dataset, which comprises over 1.6 million characters and approximately 200,000 words curated specifically for Turkish \cite{bayram_setting_2025}. This dataset is designed to reflect the linguistic complexity of Turkish, including its rich morphology, agglutinative structures, and diverse syntactic constructions. As such, it provides a rigorous basis for assessing tokenization quality in morphologically complex languages.
 
-The evaluation compared five different tokenizers: \texttt{google/gemma-2-9b}, \texttt{meta-llama/Llama-3.2-3B}, \texttt{Qwen/Qwen2.5-7B-Instruct}, \texttt{CohereForAI/aya-expanse-8b}, and the proposed \texttt{Morphology-First Tokenizer}. Each tokenizer was assessed using a consistent set of linguistic and computational metrics introduced in \cite{bayram_tokenization_2025}. These metrics include total token count, vocabulary size, number of unique tokens, Turkish Token Percentage (TR~\%), and Pure Token Percentage (Pure~\%). TR~\% quantifies the proportion of tokens that correspond to valid Turkish words or morphemes, while Pure~\% measures the proportion of tokens that fully align with unambiguous root or affix boundaries, thus reflecting morphological integrity. Importantly, TR~\% and Pure~\% are computed using an independent morphological validator with curated lexical resources external to the tokenizer under evaluation, following the protocol of \cite{bayram_tokenization_2025}, which ensures fair comparison and avoids circularity.
+The evaluation compared five different tokenizers: \texttt{google/gemma-2-9b}, \texttt{meta-llama/Llama-3.2-3B}, \texttt{Qwen/Qwen2.5-7B-Instruct}, \texttt{CohereForAI/aya-expanse-8b}, and the proposed TurkishTokenizer. Each tokenizer was assessed using a consistent set of linguistic and computational metrics introduced in \cite{bayram_tokenization_2025}. These metrics include total token count, vocabulary size, number of unique tokens, Turkish Token Percentage (TR~\%), and Pure Token Percentage (Pure~\%). TR~\% quantifies the proportion of tokens that correspond to valid Turkish words or morphemes, while Pure~\% measures the proportion of tokens that fully align with unambiguous root or affix boundaries, thus reflecting morphological integrity. Importantly, TR~\% and Pure~\% are computed using an independent morphological validator with curated lexical resources external to the tokenizer under evaluation, following the protocol of \cite{bayram_tokenization_2025}, which ensures fair comparison and avoids circularity.
 
 \begin{table}[htbp]
 \centering
-\caption{Performance of the proposed \texttt{Morphology-First Tokenizer} on the TR-MMLU dataset.}
+\caption{Performance of the proposed TurkishTokenizer on the TR-MMLU dataset.}
 \label{tab:turkish_tokenizer_results}
 \begin{tabular}{|l|c|}
 \hline
@@ -24,9 +24,9 @@ Pure Token Percentage (Pure \%) & 85.80\% \\ \hline
 \end{tabular}
 \end{table}
 
-The proposed \texttt{Morphology-First Tokenizer} demonstrated the highest linguistic alignment across all evaluated metrics. It achieved a TR~\% of 90.29\% and a Pure~\% of 85.80\%, substantially outperforming all competing tokenizers. In comparison, \texttt{google/gemma-2-9b} reached a TR~\% of only 40.96\% and a Pure~\% of 28.49\%, indicating that the majority of its tokens do not represent full morphemes. Similarly, \texttt{meta-llama/Llama-3.2-3B} produced a TR~\% of 45.77\% and a Pure~\% of 31.45\%, while \texttt{Qwen2.5} and \texttt{aya-expanse} achieved TR~\% values of 40.39\% and 53.48\%, respectively.
+The proposed TurkishTokenizer demonstrated the highest linguistic alignment across all evaluated metrics. It achieved a TR~\% of 90.29\% and a Pure~\% of 85.80\%, substantially outperforming all competing tokenizers. In comparison, \texttt{google/gemma-2-9b} reached a TR~\% of only 40.96\% and a Pure~\% of 28.49\%, indicating that the majority of its tokens do not represent full morphemes. Similarly, \texttt{meta-llama/Llama-3.2-3B} produced a TR~\% of 45.77\% and a Pure~\% of 31.45\%, while \texttt{Qwen2.5} and \texttt{aya-expanse} achieved TR~\% values of 40.39\% and 53.48\%, respectively.
 
-Despite employing significantly smaller vocabulary sizes, the proposed tokenizer demonstrated better linguistic segmentation. With a vocabulary of 32,768 tokens and 11,144 unique tokens used during evaluation, it balanced generalization and expressiveness more effectively than models such as \texttt{gemma-2-9b} and \texttt{aya-expanse}, which rely on vocabularies of over 255,000 tokens. These large-vocabulary tokenizers, rooted in frequency-based subword segmentation, tend to fragment morphologically rich expressions and introduce ambiguity in downstream tasks. In contrast, the morphological awareness of the \texttt{Morphology-First Tokenizer} enables semantically coherent token formation and more consistent syntactic parsing.
+Despite employing significantly smaller vocabulary sizes, the proposed tokenizer demonstrated better linguistic segmentation. With a vocabulary of 32,768 tokens and 11,144 unique tokens used during evaluation, it balanced generalization and expressiveness more effectively than models such as \texttt{gemma-2-9b} and \texttt{aya-expanse}, which rely on vocabularies of over 255,000 tokens. These large-vocabulary tokenizers, rooted in frequency-based subword segmentation, tend to fragment morphologically rich expressions and introduce ambiguity in downstream tasks. In contrast, the morphological awareness of TurkishTokenizer enables semantically coherent token formation and more consistent syntactic parsing.
 
 Although the total token count generated by the proposed tokenizer (707,727) exceeds those of the other models-for instance, \texttt{aya-expanse} produced 434,526 tokens-this increase is offset by gains in interpretability and linguistic fidelity. High TR~\% and Pure~\% scores suggest reduced reliance on spurious subword splits and improved preservation of morphosyntactic structure. This is particularly beneficial for tasks such as syntactic parsing, translation, summarization, and question answering, where semantic consistency across tokens is essential.
 
@@ -41,7 +41,7 @@ This sentence contains a wide range of morphological features, including compoun
 
 \vspace{1em}
 
-\textbf{Proposed Morphology-First Tokenizer:} \\
+\textbf{Proposed TurkishTokenizer:} \\
 The hybrid morphological tokenizer segments the sentence into linguistically meaningful units with high fidelity. It produces: \\
 \texttt{["<uppercase>", " atasöz", "ler", "i", " geçmiş", "ten", " günü", "m", "üz", "e", " kadar", " ulaş", "an", " anlam", "ı", " bakım", "ın", "dan", " mecaz", "lı", " bir", " mana", " kazan", "an", " kalıp", "laş", "mış", " sözle", "r", "dir", "."]} \\
 It correctly separates suffixes (\texttt{"ler", "i", "ın", "dan", "lı", "an", "mış", "dir"}), extracts root forms such as \texttt{"atasöz", "gün", "mana"} with leading spaces to mark word boundaries, and employs the \texttt{"<uppercase>"} token to preserve orthographic case.
@@ -107,7 +107,7 @@ Concretely, we construct four sentence embedding models that share the same enco
 
 Training data comes from a Turkish text corpus with pre-computed teacher embeddings (\texttt{alibayram/cosmos-corpus-0-05-with-embeddings}). We prepare a unified dataset (\texttt{alibayram/cosmos-corpus-encoded}) that stores token ID sequences for all compared tokenizers (\texttt{mft\_input\_ids}, \texttt{tabi\_input\_ids}, \texttt{cosmos\_input\_ids}, \texttt{mursit\_input\_ids}). To ensure an apples-to-apples comparison under a fixed context window, we discard any sample for which \emph{any} tokenizer produces a sequence longer than 2048 tokens, so that no model benefits from truncation artifacts or sees different content due to length differences.
 
-Because MFT is implemented as a custom Python tokenizer rather than a standard HuggingFace tokenizer, we use pre-encoded \texttt{input\_ids} and a lightweight ``tokenizer bypass'' patch in the \texttt{sentence-transformers} training stack so the same trainer loop can consume all four token streams without rewriting the model code. All downstream evaluations are run with fixed scripts: \texttt{evaluate\_sts\_tr.py} for STS, \texttt{mteb-tr/mteb\_tr\_cli.py} for MTEB-TR, and \texttt{evaluate\_turblimp.py} for TurBLiMP.
+Because TurkishTokenizer is implemented as a custom Python tokenizer rather than a standard HuggingFace tokenizer, we use pre-encoded \texttt{input\_ids} and a lightweight ``tokenizer bypass'' patch in the \texttt{sentence-transformers} training stack so the same trainer loop can consume all four token streams without rewriting the model code. All downstream evaluations are run with fixed scripts: \texttt{evaluate\_sts\_tr.py} for STS, \texttt{mteb-tr/mteb\_tr\_cli.py} for MTEB-TR, and \texttt{evaluate\_turblimp.py} for TurBLiMP.
 
 \begin{table}[H]
 \centering
@@ -143,25 +143,25 @@ We evaluated the models on the Turkish STS benchmark (stsb-tr) without task-spec
     \label{fig:sts_chart}
 \end{figure}
 
-On the STSb-TR test split ($n=1379$), the \texttt{mft-random-init} model achieved a Pearson correlation of \textbf{50.37\%} and Spearman correlation of \textbf{49.35\%}, consistently outperforming all baselines. In comparison, \texttt{newmindaiMursit-random-init} achieved 43.94\% Pearson / 43.75\% Spearman, \texttt{cosmosGPT2-random-init} reached 38.90\% Pearson / 38.02\% Spearman, and \texttt{tabi-random-init} scored 33.58\% Pearson / 33.24\% Spearman. Using a Fisher transform, the 95\% confidence interval for MFT test Pearson is [47.5, 53.1], compared to [30.9, 36.2] for Tabi, indicating that the gain is statistically robust at this sample size. On the training split ($n=5749$), MFT also remains ahead (Table~\ref{tab:sts_results}).
+On the STSb-TR test split ($n=1379$), the \texttt{mft-random-init} model achieved a Pearson correlation of \textbf{50.37\%} and Spearman correlation of \textbf{49.35\%}, consistently outperforming all baselines. In comparison, \texttt{newmindaiMursit-random-init} achieved 43.94\% Pearson / 43.75\% Spearman, \texttt{cosmosGPT2-random-init} reached 38.90\% Pearson / 38.02\% Spearman, and \texttt{tabi-random-init} scored 33.58\% Pearson / 33.24\% Spearman. Using a Fisher transform, the 95\% confidence interval for TurkishTokenizer test Pearson is [47.5, 53.1], compared to [30.9, 36.2] for Tabi, indicating that the gain is statistically robust at this sample size. On the training split ($n=5749$), TurkishTokenizer also remains ahead (Table~\ref{tab:sts_results}).
 
 \begin{table}[H]
 \centering
 \caption{STS benchmark correlations across train and test splits.}
 \label{tab:sts_results}
-\begin{tabular}{llrrr}
+\begin{tabular}{llrr}
 \toprule
-\textbf{Model} & \textbf{Split} & \textbf{Pearson} & \textbf{Spearman} & \textbf{Time (s)} \\
+\textbf{Model} & \textbf{Split} & \textbf{Pearson} & \textbf{Spearman} \\
 \midrule
-MFT & test ($n=1379$) & \textbf{50.37} & \textbf{49.35} & 10.68 \\
-Mursit & test ($n=1379$) & 43.94 & 43.75 & 7.67 \\
-Cosmos & test ($n=1379$) & 38.90 & 38.02 & 7.52 \\
-Tabi & test ($n=1379$) & 33.58 & 33.24 & 8.18 \\
+TurkishTokenizer & test ($n=1379$) & \textbf{50.37} & \textbf{49.35} \\
+Mursit & test ($n=1379$) & 43.94 & 43.75 \\
+Cosmos & test ($n=1379$) & 38.90 & 38.02 \\
+Tabi & test ($n=1379$) & 33.58 & 33.24 \\
 \midrule
-MFT & train ($n=5749$) & \textbf{53.34} & \textbf{51.31} & 47.48 \\
-Mursit & train ($n=5749$) & 45.51 & 44.38 & 33.39 \\
-Cosmos & train ($n=5749$) & 40.48 & 39.89 & 32.22 \\
-Tabi & train ($n=5749$) & 38.20 & 37.44 & 36.31 \\
+TurkishTokenizer & train ($n=5749$) & \textbf{53.34} & \textbf{51.31} \\
+Mursit & train ($n=5749$) & 45.51 & 44.38 \\
+Cosmos & train ($n=5749$) & 40.48 & 39.89 \\
+Tabi & train ($n=5749$) & 38.20 & 37.44 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -177,7 +177,7 @@ To better understand the learning dynamics, we analyzed the performance evolutio
 
 Pearson correlation captures linear agreement with human similarity judgments, while Spearman correlation captures rank-order agreement. Reporting both is important in STS, since models may preserve relative similarity ordering even when the mapping is not perfectly linear, and conversely small linear gains may not reflect better ranking behavior.
 
-In our version tracking, both correlations show the same qualitative trend: MFT remains ahead of the strongest baselines across revisions, indicating that the downstream improvement is stable rather than a single-run artifact. Importantly, all three baseline tokenizers (Mursit, Cosmos, Tabi)---which are independently trained BPE tokenizers from different research groups---show consistent relative ordering across all benchmarks (STS, MTEB-TR, TurBLiMP). This cross-tokenizer consistency provides strong evidence that the observed performance differences reflect genuine tokenizer-induced inductive bias rather than random initialization variance: it is statistically implausible for MFT to outperform three independent baselines by chance across multiple evaluation dimensions. While we train with a single seed (42), the consistent MFT advantage across four independently tokenized model variants serves as an implicit multi-seed control.
+In our version tracking, both correlations show the same qualitative trend: TurkishTokenizer remains ahead of the strongest baselines across revisions, indicating that the downstream improvement is stable rather than a single-run artifact. Importantly, all three baseline tokenizers (Mursit, Cosmos, Tabi)---which are independently trained BPE tokenizers from different research groups---show consistent relative ordering across all benchmarks (STS, MTEB-TR, TurBLiMP). This cross-tokenizer consistency provides strong evidence that the observed performance differences reflect genuine tokenizer-induced inductive bias rather than random initialization variance: it is statistically implausible for TurkishTokenizer to outperform three independent baselines by chance across multiple evaluation dimensions. While we train with a single seed (42), the consistent TurkishTokenizer advantage across four independently tokenized model variants serves as an implicit multi-seed control.
 
 \begin{figure}[t!]
     \centering
@@ -186,7 +186,7 @@ In our version tracking, both correlations show the same qualitative trend: MFT 
     \label{fig:version_history_spearman}
 \end{figure}
 
-On the comprehensive MTEB suite, which covers retrieval, classification, clustering, and pair classification tasks, the MFT-based model achieves the strongest overall average among the compared random-initialized baselines.
+On the comprehensive MTEB suite, which covers retrieval, classification, clustering, and pair classification tasks, the TurkishTokenizer-based model achieves the strongest overall average among the compared random-initialized baselines.
 
 \begin{figure}[t!]
     \centering
@@ -201,7 +201,7 @@ On the comprehensive MTEB suite, which covers retrieval, classification, cluster
 \label{tab:mteb_category_averages}
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Category} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
+\textbf{Category} & \textbf{TurkishTokenizer} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
 \midrule
 BitextMining & \textbf{1.53} & 1.08 & 1.26 & 1.39 \\
 Classification & \textbf{58.81} & 57.52 & 57.71 & 56.52 \\
@@ -221,7 +221,7 @@ STS & \textbf{49.36} & 38.04 & 43.75 & 33.24 \\
 \resizebox{\linewidth}{!}{
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Task} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
+\textbf{Task} & \textbf{TurkishTokenizer} & \textbf{Cosmos} & \textbf{Mursit} & \textbf{Tabi} \\
 \midrule
 \multicolumn{5}{l}{\textit{BitextMining}} \\
 WMT16BitextMining & \textbf{1.53} & 1.08 & 1.26 & 1.39 \\
@@ -261,7 +261,7 @@ STSbTR & \textbf{49.36} & 38.04 & 43.75 & 33.24 \\
 }
 \end{table}
 
-As shown in Table \ref{tab:mteb_detailed}, the MFT-based model achieved an average score of \textbf{38.99\%} across 26 tasks, surpassing Mursit (34.98\%), Cosmos (34.43\%), and Tabi (33.33\%). Analyzing performance by category reveals distinct trade-offs. MFT demonstrates substantial advantages in \textit{STS} and \textit{Retrieval} tasks (e.g., TQuadRetrieval: 43.46\% vs 26.30\% for Tabi), which aligns with our hypothesis that morphology-aware segmentation improves the semantic quality of embeddings for similarity and search. At the same time, the Tabi baseline remains competitive or superior in specific \textit{Classification} tasks (e.g., Turkish75NewsClassification: 79.33\% vs 73.33\% for MFT) and \textit{BitextMining}, suggesting that different tokenization priors can favor different downstream regimes even under matched architecture and training protocol.
+As shown in Table \ref{tab:mteb_detailed}, the TurkishTokenizer-based model achieved an average score of \textbf{38.99\%} across 26 tasks, surpassing Mursit (34.98\%), Cosmos (34.43\%), and Tabi (33.33\%). Analyzing performance by category reveals distinct trade-offs. TurkishTokenizer demonstrates substantial advantages in \textit{STS} and \textit{Retrieval} tasks (e.g., TQuadRetrieval: 43.46\% vs 26.30\% for Tabi), which aligns with our hypothesis that morphology-aware segmentation improves the semantic quality of embeddings for similarity and search. At the same time, the Tabi baseline remains competitive or superior in specific \textit{Classification} tasks (e.g., Turkish75NewsClassification: 79.33\% vs 73.33\% for TurkishTokenizer) and \textit{BitextMining}, suggesting that different tokenization priors can favor different downstream regimes even under matched architecture and training protocol.
 
 
 TurBLiMP provides Turkish minimal pairs designed to probe specific linguistic phenomena (e.g., agreement, scrambling, nominalization). Since our models are sentence embedding encoders (rather than generative language models), we evaluate an embedding-based proxy: for each minimal pair, we embed the grammatical and ungrammatical sentence and compute cosine similarity. Each category contains 1,000 minimal pairs in our evaluation. We report the average cosine similarity per phenomenon (shown as a percentage). Higher values indicate that the embedding representation is more invariant to these grammatical perturbations; this should not be interpreted as direct grammaticality classification accuracy.
@@ -273,7 +273,7 @@ TurBLiMP provides Turkish minimal pairs designed to probe specific linguistic ph
 \resizebox{\linewidth}{!}{
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Linguistic Phenomenon} & \textbf{Mursit} & \textbf{MFT} & \textbf{Cosmos} & \textbf{Tabi} \\
+\textbf{Linguistic Phenomenon} & \textbf{Mursit} & \textbf{TurkishTokenizer} & \textbf{Cosmos} & \textbf{Tabi} \\
 \midrule
 Ellipsis & 98.0\% & \textbf{99.2\%} & 97.7\% & 93.0\% \\
 Scrambling & 97.7\% & \textbf{98.0\%} & 97.3\% & \textbf{98.0\%} \\
@@ -296,8 +296,8 @@ Island Effects & 79.7\% & \textbf{84.0\%} & 76.2\% & \textbf{84.0\%} \\
 }
 \end{table}
 
-Across many categories, MFT yields higher similarity between minimal pairs than the general-purpose baselines (e.g., \textit{Relative Clauses} 96.1\% vs.\ 86.3\% for Cosmos). Under this embedding-based proxy, this suggests that morphology-first segmentation yields more stable semantic representations even when surface form is perturbed by controlled grammatical manipulations. A complementary evaluation of true grammatical sensitivity would require scoring minimal pairs with language model likelihood or a supervised acceptability classifier, which we leave for future work.
+Across many categories, TurkishTokenizer yields higher similarity between minimal pairs than the general-purpose baselines (e.g., \textit{Relative Clauses} 96.1\% vs.\ 86.3\% for Cosmos). Under this embedding-based proxy, this suggests that morphology-first segmentation yields more stable semantic representations even when surface form is perturbed by controlled grammatical manipulations. A complementary evaluation of true grammatical sensitivity would require scoring minimal pairs with language model likelihood or a supervised acceptability classifier, which we leave for future work.
 
-Finally, we tracked STS performance across multiple code revisions to ensure the observed gains are not a one-off artifact. Across all evaluated revisions, MFT remains ahead on average, and the best observed MFT revision reaches 50.45\% Pearson / 49.44\% Spearman on STSb-TR.
+Finally, we tracked STS performance across multiple code revisions to ensure the observed gains are not a one-off artifact. Across all evaluated revisions, TurkishTokenizer remains ahead on average, and the best observed TurkishTokenizer revision reaches 50.45\% Pearson / 49.44\% Spearman on STSb-TR.
 
 \FloatBarrier

@@ -6,11 +6,11 @@
 The most consistent downstream gains we observe appear on STS, where sentence-level meaning equivalence is evaluated via correlation with human judgments. A morphology-first tokenizer reduces two specific sources of representational noise in Turkish:
 (i) \emph{root fragmentation}, where a frequent lexical stem is split into unrelated subpieces, and
 (ii) \emph{allomorph dispersion}, where surface variants of the same morpheme (or root alternation) map to unrelated token identities.
-Both effects can increase the burden on the model to relearn compositional meaning across many surface forms. By making roots and productive suffixes explicit and unifying common allomorphic variants, MFT encourages repeated exposure to stable meaning-bearing units.
+Both effects can increase the burden on the model to relearn compositional meaning across many surface forms. By making roots and productive suffixes explicit and unifying common allomorphic variants, TurkishTokenizer encourages repeated exposure to stable meaning-bearing units.
 
 \textbf{Trade-offs: token count, purity, and efficiency.}
 
-An important practical question is whether better morpheme alignment necessarily increases sequence length. In our TR-MMLU analysis, the proposed tokenizer produces more tokens overall than some baselines but achieves markedly higher TR~\% and Pure~\%. This reflects a deliberate bias toward compositionality: the tokenizer prefers to isolate affixes and preserve stable roots rather than ``compress'' meaning into opaque subword merges. On representative Turkish sentences, MFT averages approximately 3.2 tokens per word, compared to roughly 2.0--2.5 for BPE-based baselines; the additional tokens correspond to explicit suffix boundaries rather than arbitrary substrings. The resulting trade-off can be summarized as:
+An important practical question is whether better morpheme alignment necessarily increases sequence length. In our TR-MMLU analysis, the proposed tokenizer produces more tokens overall than some baselines but achieves markedly higher TR~\% and Pure~\%. This reflects a deliberate bias toward compositionality: the tokenizer prefers to isolate affixes and preserve stable roots rather than ``compress'' meaning into opaque subword merges. On representative Turkish sentences, TurkishTokenizer averages approximately 3.2 tokens per word, compared to roughly 2.0--2.5 for BPE-based baselines; the additional tokens correspond to explicit suffix boundaries rather than arbitrary substrings. The resulting trade-off can be summarized as:
 The resulting trade-off involves three factors. First, higher alignment (TR~\% and Pure~\%) indicates tokens correspond to more interpretable units. Second, this explicit segmentation can increase token counts on morphologically complex word forms (higher fertility). Finally, longer sequences increase attention cost in transformer models, so the net effect on training and inference depends on how much alignment improves sample efficiency and representation quality.
 
 Our current study reports tokenization-time measurements for the proposed tokenizer on TR-MMLU and provides downstream quality comparisons under a fixed training budget. A complete efficiency characterization would additionally compare tokenization throughput and end-to-end model latency for all baseline tokenizers under standardized hardware and batching.
@@ -25,8 +25,8 @@ Despite improved alignment on many constructions, several edge cases remain impo
 \textbf{Interpretation of MTEB-TR results.}
 
 On the broader MTEB-TR suite, results are closer between tokenizers than on STS. This is expected because the benchmark spans heterogeneous task types (retrieval, classification, clustering, STS), and performance depends on factors beyond tokenization (training recipe, data distribution, and model architecture). Two takeaways are robust in our runs:
-(i) MFT does not degrade performance across the suite and remains competitive, and
-(ii) MFT yields the clearest improvements on semantic similarity, consistent with the hypothesis that morpheme-level clarity supports stable sentence representations.
+(i) TurkishTokenizer does not degrade performance across the suite and remains competitive, and
+(ii) TurkishTokenizer yields the clearest improvements on semantic similarity, consistent with the hypothesis that morpheme-level clarity supports stable sentence representations.
 
 \textbf{From embeddings to pretraining and fine-tuning.}
 
